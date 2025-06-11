@@ -1,0 +1,27 @@
+services:
+  sqlserver_1436:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver_1436
+    ports:
+    - "1436:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "mysettingpassword"
+    volumes:
+    - ./storage/sqlserver_1436/data:/var/opt/mssql/data
+    - ./storage/sqlserver_1436/log:/var/opt/mssql/log
+    - ./storage/sqlserver_1436/secrets:/var/opt/mssql/secrets
+    restart: always
+  sqlserver_1437:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver_1437
+    ports:
+    - "1437:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "mysettingpassword"
+    volumes:
+    - ./storage/sqlserver_1437/data:/var/opt/mssql/data
+    - ./storage/sqlserver_1436/log:/var/opt/mssql/log
+    - ./storage/sqlserver_1436/secrets:/var/opt/mssql/secrets
+    restart: always

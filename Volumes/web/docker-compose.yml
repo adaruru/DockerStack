@@ -1,0 +1,100 @@
+services:
+  dparcore-web:
+    image: 192.168.10.20:5000/dparcore-web:latest
+    container_name: dparcore-web
+    environment:
+    - ASPNETCORE_ENVIRONMENT=Container
+    - TZ=Asia/Taipei
+    ports:
+    - "5034:80"
+    - "7034:443"
+    volumes:
+    - D:/dparcore/d:/app/d
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10M"
+        max-file: 5
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+          cpus: "1"
+        reservations:
+          memory: 256M
+          cpus: "0.5"
+
+  dparcore-batch:
+    image: 192.168.10.20:5000/dparcore-batch:latest
+    container_name: dparcore-batch
+    environment:
+    - DOTNET_ENVIRONMENT=Containerwin1
+    - TZ=Asia/Taipei
+    volumes:
+    - D:/dparcore/d:/app/d
+    - D:/dparcore/c:/app/c
+    stdin_open: true
+    tty: true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10M"
+        max-file: 5
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+          cpus: "0.5"
+        reservations:
+          memory: 256M
+          cpus: "0.25"
+
+  dparcore-win1:
+    image: 192.168.10.20:5000/dparcore-win:latest
+    container_name: dparcore-win1
+    environment:
+    - DOTNET_ENVIRONMENT=Containerwin1
+    - TZ=Asia/Taipei
+    volumes:
+    - D:/dparcore/d:/app/d
+    - D:/dparcore/c:/app/c
+    stdin_open: true
+    tty: true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10M"
+        max-file: 5
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+          cpus: "0.5"
+        reservations:
+          memory: 256M
+          cpus: "0.25"
+
+  dparcore-win2:
+    image: 192.168.10.20:5000/dparcore-win:latest
+    container_name: dparcore-win2
+    environment:
+    - DOTNET_ENVIRONMENT=Containerwin2
+    - TZ=Asia/Taipei
+    volumes:
+    - D:/dparcore/d:/app/d
+    - D:/dparcore/c:/app/c
+    stdin_open: true
+    tty: true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10M"
+        max-file: 5
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+          cpus: "0.5"
+        reservations:
+          memory: 256M
+          cpus: "0.25"

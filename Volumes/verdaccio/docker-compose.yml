@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+  verdaccio:
+    image: verdaccio/verdaccio:latest
+    container_name: verdaccio
+    ports:
+    - "4873:4873"
+    volumes:
+    - ./storage:/verdaccio/storage
+    - ./conf:/verdaccio/conf
+    restart: always

@@ -1,0 +1,50 @@
+services:
+  its-file-servive1:
+    image: its-file-servive
+    container_name: its-file-servive1
+    environment:
+    - ASPNETCORE_ENVIRONMENT=Container1
+    - TZ=Asia/Taipei
+    ports:
+    - "2251:80"
+    - "2271:443"
+    volumes:
+    - D:/its-file-servive/d:/app/d
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10M"
+        max-file: 5
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+          cpus: "1"
+        reservations:
+          memory: 256M
+          cpus: "0.5"
+
+  its-file-servive2:
+    image: its-file-servive
+    container_name: its-file-servive2
+    environment:
+    - ASPNETCORE_ENVIRONMENT=Container2
+    - TZ=Asia/Taipei
+    ports:
+    - "2252:80"
+    - "2272:443"
+    volumes:
+    - D:/its-file-servive/d:/app/d
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10M"
+        max-file: 5
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+          cpus: "1"
+        reservations:
+          memory: 256M
+          cpus: "0.5"

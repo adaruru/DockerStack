@@ -1,0 +1,26 @@
+services:
+  dparcore-web:
+    image: carcare-storeapi:dev
+    container_name: carcare-storeapi
+    environment:
+    - ASPNETCORE_HTTP_PORTS=80
+    - ASPNETCORE_ENVIRONMENT=Container
+    - TZ=Asia/Taipei
+    ports:
+    - "7728:80"
+    - "7729:443"
+    volumes:
+    - D:/carcare-storeapi/d:/app/d
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10M"
+        max-file: 5
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+          cpus: "1"
+        reservations:
+          memory: 256M
+          cpus: "0.5"

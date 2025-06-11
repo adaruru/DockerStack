@@ -1,0 +1,15 @@
+version: '3.9'
+services:
+  nuget:
+    image: loicsharma/baget:latest
+    container_name: itsnuget
+    ports:
+    - "29:80"
+    environment:
+    - ApiKey=mysettingpassword
+    - Storage__Type=FileSystem # 設定存儲類型為檔案系統
+    - Storage__Path=/var/packages
+    volumes:
+    - ./storage/data:/var/baget
+    - ./storage:/var/packages # 持久化存儲，將主機的資料夾掛載到容器
+    restart: unless-stopped # 除非手動停止，否則重啟容器

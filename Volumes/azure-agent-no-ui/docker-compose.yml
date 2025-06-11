@@ -1,0 +1,30 @@
+services:
+  itsower-docker-registry:
+    image: registry:2
+    container_name: itsower-docker-registry
+    ports:
+    - "5000:5000"
+    restart: always
+    volumes:
+    - ./storage/itsower-docker-registry/data:/var/lib/registry # 儲存映像的本地目錄
+    - ./storage/itsower-docker-registry/auth:/auth # 身份驗證資料夾（可選）
+    - ./storage/itsower-docker-registry/certs:/certs # 憑證資料夾（可選）
+    environment:
+      REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /var/lib/registry
+      REGISTRY_STORAGE_DELETE_ENABLED: 'true'
+
+  azure-pipeline-agent:
+    image: azure-agent:dev
+    container_name: azure-agent
+    environment:
+    - AZP_URL=https://itsower-vsonline.visualstudio.com
+    - AZP_TOKEN=mySettingPersonalAccesssToken
+    - AZP_POOL=linux-container-agent-pool
+    - AZP_AGENT_NAME=linux-container-agent
+    - DOCKER_HOST=tcp://host.docker.internal:2375
+    #volumes:
+    #- //./pipe/docker_engine:/var/run/docker.sock # 挂载 Windows 的 Docker Named Pipe
+    #privileged: true
+    depends_on:
+    - itsower-docker-registry # 確保 Registry 先啟動
+    restart: always

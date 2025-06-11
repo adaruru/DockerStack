@@ -1,0 +1,18 @@
+services:
+  azure-pipeline-agent:
+    image: azure-pipeline-agent:0.0.1
+    container_name: azure-pipeline-agent
+    environment:
+    - AZP_URL=https://itsower-vsonline.visualstudio.com
+    - AZP_TOKEN=mySettingPersonalAccesssToken
+    - AZP_POOL=pipeline-agent
+    - AZP_AGENT_NAME=63-ci-agent
+    volumes:
+    - ./storage/azure-devops-agent/docker:/var/lib/docker # Docker 資料夾
+    - ./storage/azure-devops-agent/config:/etc/docker # Docker 設定檔
+    #depends_on:
+    #- docker-registry # 確保 Registry 先啟動
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock    # 掛載宿主機 Docker 套接字，用於 Docker 操作
+      - ./storage/azure-pipeline-agent:/azp   # 可選：將配置或數據持久化存儲
+    restart: always
