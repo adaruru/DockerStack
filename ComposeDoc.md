@@ -1,4 +1,4 @@
-# docker-compose run container
+# Compose Doc
 
 ## docker-compose run flow
 
@@ -33,7 +33,7 @@ docker-compose -f ./WinService/docker-compose.yml up -d
 3. 組成 container 模式，故會形成叢集資料夾 container 分層方式顯示
 
 複製 ReadingNote\Devops\.attach\.docker\Volumes
-到 D:\Users\AmandaChou\Volumes
+到 D:\Users\AmandaChou\git\github\DockerStack\Volumes
 
 開始所有 compose file 的維護與執行
 
@@ -61,7 +61,7 @@ docker-compose up -d
 
 1. cd 到 complose 位置
 
-   `cd D:\Users\AmandaChou\Volumes\dockerrepos`
+   `cd D:\Users\AmandaChou\git\github\DockerStack\Volumes\dockerrepos`
 
 2. 檢查 complose 存在
 
@@ -118,21 +118,21 @@ port 使用 container 對外 port
 
 ## BeGat
 
-1. cd 到 complose 位置
+### BeGat compose build
 
-   `cd D:\Users\AmandaChou\Volumes\nuget`
+```powershell
+# cd 到 complose 位置
+cd D:\Users\AmandaChou\git\github\DockerStack\Volumes\nuget
 
-2. 檢查 complose 存在
+# 檢查 complose 存在
+ls
 
-   `ls`
+# 執行
+docker-compose up -d
 
-3. 執行
-
-   `docker-compose up -d`
-
-4. 檢查容器是否執行
-
-   `docker ps`
+# 檢查容器是否執行
+docker ps
+```
 
 #### 檢測是否穩定運行
 
@@ -152,11 +152,32 @@ http://localhost:29/
 
    可能需要去 %APPDATA%/NuGet/NuGet.Config 新增 <add key="63ITSbegat" value="http://192.168.10.10:29/v3/index.json" allowInsecureConnections="True" />
 
-## MSSQL build
+## Redis
+
+### Redis compose build
+
+```powershell
+# cd 到 complose 位置
+cd D:\Users\AmandaChou\git\github\DockerStack\Volumes\redis\
+
+# 檢查 complose 存在
+ls
+
+# 執行
+docker-compose up -d
+
+# 檢查容器是否執行
+docker ps
+
+# 進入容器
+docker exec -it container_name: carcare-redis bash
+```
+
+## MSSQL
 
 1. cd 到 complose 位置
 
-   `cd D:\Users\AmandaChou\Volumes\mssql`
+   `cd D:\Users\AmandaChou\git\github\DockerStack\Volumes\mssql`
 
 2. 檢查 complose 存在
 
@@ -292,11 +313,11 @@ docker exec -it sqlserver_1437 /opt/mssql-tools18/bin/sqlcmd -S tcp:localhost,14
 
 A lightweight Node.js private proxy registry
 
-#### Verdaccio build
+#### Verdaccio compose build
 
 ```cmd
 #進入有 compose 的 資料夾
-cd D:\Users\AmandaChou\Volumes\verdaccio
+cd D:\Users\AmandaChou\git\github\DockerStack\Volumes\verdaccio
 
 #檢查檔案存在
 ls

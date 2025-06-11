@@ -1,0 +1,11 @@
+services:
+  redis:
+    image: redis:8.0
+    container_name: carcare-redis
+    ports:
+    - "6379:6379"
+    # command: redis-server --appendonly yes 不設置密碼
+    command: [ "redis-server", "--requirepass", "html5!its", "--appendonly", "yes" ]
+    volumes:
+    - ./storage/data:/data
+    restart: unless-stopped
