@@ -1,0 +1,62 @@
+services:
+  registry-ui:
+    image: joxit/docker-registry-ui:main
+    container_name: registry-ui
+    restart: always
+    ports:
+    - 5001:80
+    environment:
+    - SINGLE_REGISTRY=true
+    - REGISTRY_TITLE=Docker Registry UI
+    - DELETE_IMAGES=true
+    - SHOW_CONTENT_DIGEST=true
+    - NGINX_PROXY_PASS_URL=http://192.168.10.20:5000
+    - SHOW_CATALOG_NB_TAGS=true
+    - CATALOG_MIN_BRANCHES=1
+    - CATALOG_MAX_BRANCHES=1
+    - TAGLIST_PAGE_SIZE=100
+    - REGISTRY_SECURED=false
+    - CATALOG_ELEMENTS_LIMIT=1000
+
+  itsower-docker-registry:
+    image: registry:2
+    container_name: itsower-docker-registry
+    ports:
+    - "5000:5000"
+    restart: always
+    volumes:
+    - ./config/itsower-docker-registry/config.yml:/etc/docker/registry/config.yml
+    - ./storage/itsower-docker-registry/data:/var/lib/registry # 儲存映像的本地目錄
+    - ./storage/itsower-docker-registry/auth:/auth # 身份驗證資料夾（可選）
+    - ./storage/itsower-docker-registry/certs:/certs # 憑證資料夾（可選）
+    environment:
+      REGISTRY_HTTP_HEADERS_Access-Control-Allow-Origin: '[http://192.168.10.20:5000]'
+      REGISTRY_HTTP_HEADERS_Access-Control-Allow-Methods: '[HEAD,GET,OPTIONS,DELETE]'
+      REGISTRY_HTTP_HEADERS_Access-Control-Allow-Credentials: '[true]'
+      REGISTRY_HTTP_HEADERS_Access-Control-Allow-Headers: '[Authorization,Accept,Cache-Control]'
+      REGISTRY_HTTP_HEADERS_Access-Control-Expose-Headers: '[Docker-Content-Digest]'
+      REGISTRY_STORAGE_DELETE_ENABLED: 'true'
+      REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /var/lib/registry
+      # 可選的身份驗證
+      # REGISTRY_AUTH: htpasswd
+      # REGISTRY_AUTH_HTPASSWD_REALM: Registry Realm
+      # REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd
+      # 可選的 HTTPS 支持
+      # REGISTRY_HTTP_TLS_CERTIFICATE: /certs/domain.crt
+      # REGISTRY_HTTP_TLS_KEY: /certs/domain.key
+
+  azure-pipeline-agent:
+    image: azure-agent:dev
+    container_name: azure-agent
+    environment:
+    - AZP_URL=https://itsower-vsonline.visualstudio.com
+    - AZP_TOKEN=mySettingPersonalAccesssToken
+    - AZP_POOL=linux-container-agent-pool
+    - AZP_AGENT_NAME=linux-container-agent
+    - DOCKER_HOST=tcp://host.docker.internal:2375
+    #volumes:
+    #- //./pipe/docker_engine:/var/run/docker.sock # 挂载 Windows 的 Docker Named Pipe
+    #privileged: true
+    depends_on:
+    - itsower-docker-registry # 確保 Registry 先啟動
+    restart: always
