@@ -169,35 +169,44 @@ docker-compose up -d
 # 檢查容器是否執行
 docker ps
 
-# 進入容器
-docker exec -it container_name: carcare-redis bash
+# 進入容器 cli 工具
+docker exec -it carcare-redis redis-cli -a mysettingpassword
+
+# 進測資
+Set name "Amnda"
+# 查測資
+Get name
 ```
+
+### 安裝 medis 檢查 redis 安裝狀況
+
+https://github.com/liying2008/medis-binaries/releases
+
+![image-20250611164635548](.attach/.ComposeDoc/image-20250611164635548.png)
 
 ## MSSQL
 
-1. cd 到 complose 位置
+### MSSQL compose build
 
-   `cd D:\Users\AmandaChou\git\github\DockerStack\Volumes\mssql`
+```powershell
+# cd 到 complose 位置
+cd D:\Users\AmandaChou\git\github\DockerStack\Volumes\mssql
 
-2. 檢查 complose 存在
+# 檢查 complose 存在
+ls
 
-   `ls`
+# 執行
+docker-compose up -d
 
-3. 執行
+# 檢查容器是否執行
+docker ps
 
-   `docker-compose up -d`
+# 進入容器
+docker exec -it sqlserver_1437 bash
 
-4. 檢查容器是否執行
-
-   `docker ps`
-
-5. 進入容器
-
-   docker exec -it sqlserver_1437 bash
-
-6. 進入容器使用容器內 cli 工具
-
-   docker exec -it sqlserver_1437 /opt/mssql-tools18/bin/sqlcmd -S tcp:localhost  -U sa -P "mysettingpassword" -C
+# 進入容器使用容器內 cli 工具
+docker exec -it sqlserver_1437 /opt/mssql-tools18/bin/sqlcmd -S tcp:localhost  -U sa -P "mysettingpassword" -C
+```
 
 #### 測試 SSMS 連線
 
