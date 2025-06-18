@@ -18,6 +18,10 @@ Collection of Dockerfiles and Docker Compose templates for development, testing,
 
 - 虛擬化
 
+### Docker 宿主機( Docker Host )
+
+
+
 ### Docker 映像 ( Docker Image )
 
 容器的模板，唯讀，包含應用程序和環境的所有信息。
@@ -96,7 +100,223 @@ ENTRYPOINT ["dotnet", "ITSFileService.dll"]
 
 - 增加安全性，確保最終映像不包含開發工具或多餘的檔案。
 
-### entrypoint and command
+### Docker 虛擬網路( Docker Network )
+
+#### Docker  容器虛擬網卡（Docker  container vNIC）
+
+每個 container 擁有的「虛擬網路卡」，就像你電腦的網卡；一張卡對應一個 container
+
+#### Docker bridge ( Docker 虛擬交換機 ) 
+
+是 Docker 預設的虛擬網路結構。
+
+其概念是「橋接」多個 container 的虛擬網卡（vNIC），形成一個私有網段，讓 container 間可以直接通訊，但不直接暴露在主機網路中。
+
+當你將 network 的 `driver` 設為 `bridge`，Docker 就會建立一張虛擬交換機，並自動將每個 container 的 vNIC 接入其中。
+
+```
+[Container A] -- vNIC A --┐
+[Container B] -- vNIC B --├── [虛擬交換機 (bridge)]
+[Container C] -- vNIC C --┘
+```
+
+#### Other Driver
+
+ network 的 `driver` 設為 `bridge`形成私有網段，表格比較其他 Driver 用途
+
+| Driver 名稱 | 類型       | 說明                                                         | 適用情境                                                     |
+| ----------- | ---------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| `bridge`    | 單主機私網 | Docker 預設網路，container 之間可通訊，但與主機隔離          | 單機應用為主；Container-A 可叫 Container-B                   |
+| `host`      | 單主機共網 | 跳過 bridge，Container 直接用主機網卡與 IP，無隔離（不建議用） | 高效能需求（如低延遲測試） 需與主機共用網路時 效能測試時 無隔離性，需用主機 IP，直接暴露主機 |
+| `none`      | 單主機隔離 | 完全不配置網路，container 內無網路（完全隔離）               | 完全安全隔離用途，僅執行本地運算 無法連線，除非手動設定 (如封閉測試、離線計算) |
+| `overlay`   | 多主機通訊 | 用於 `Docker Swarm`，實現跨主機 container 通訊               | 多台機器跑 docker swarm 多台機器聯動時使用（需啟用 swarm mode） |
+| `macvlan`   | 單主機高階 | 模擬實體網卡，container 直接被分配實體網段 IP                | 高階網路需求，如需與實體設備共用網段或自訂 DHCP              |
+
+#### compose set bridge networks
+
+Docker 在 compose 設定 networks
+
+```yaml
+networks:
+  its-net:
+    driver: bridge
+```
+
+指令檢查可用的 driver 與 networks
+
+```powershell
+docker network ls
+docker network create --driver bridge mynet
+```
+
+就換看到，這也是 一個 compose 內管理的 container 網路互通的原因
+
+```
+NETWORK ID     NAME                  DRIVER    SCOPE
+xxxxxxxxxxxx   bridge                bridge    local
+yyyyyyyyyyyy   mycompose_default     bridge    local  <-- 這就是自動建立的
+```
+
+查看目前系統支援哪些 driver：
+
+```bash
+CopyEdit
+docker info
+```
+
+這些 driver 是 `docker network create` 指令的 `--driver` 選項。
+
+#### Docker default networks
+
+compose networks 沒有設定的情況下，Docker 自動建立一個叫 `default` 的 network，該 network 使用 `bridge` driver，所有 service 都會自動加入這個 `default bridge network`，可互相用 service 名稱通訊（有 DNS），不會直接用主機網卡，仍然是透過 Docker port 映射暴露出來（例如 `- "2287:80"`）
+
+#### Docker networks purpose
+
+設定 Docker networks 的目的，是為了控制容器之間的虛擬網路通訊範圍，實現 Isolated（隔離）與 Shared（共用）的網路結構。
+
+##### 隔離 vs. 共用
+
+| 項目             | 說明                                                         |
+| ---------------- | ------------------------------------------------------------ |
+| **共用 network** | 多個 container 加入同一個 Docker network，可直接互相通訊（透過 service name） |
+| **隔離 network** | container 各自加入不同的 Docker network，預設下無法通訊，互相隔離 |
+
+##### 實際差異
+
+| 比較項目            | 共用 network                | 隔離 network                        |
+| ------------------- | --------------------------- | ----------------------------------- |
+| **名稱解析（DNS）** | ✅ 可解析其他 container 名稱 | ❌ 無法解析其他 network 的 container |
+| **通訊能力**        | ✅ 可 HTTP/ping 等互相連線   | ❌ 預設無法通訊                      |
+| **用途**            | 微服務架構、內部通訊        | 多租戶、跨系統隔離、安全強化        |
+| **管理**            | 簡單，自動連線              | 可控，每個子系統互不干擾            |
+
+##### 常見誤解
+
+| 誤區項目                             | 說明                                                         |
+| ------------------------------------ | ------------------------------------------------------------ |
+| ❌ **a. 網速會變慢**                  | 錯，內部通訊走主機記憶體層級，**速度極快**，比實體網卡還快   |
+| ❌ **b. 會切割頻寬或資源**            | 錯，network 僅定義通訊邊界，**不會做頻寬限制**（除非你明確設定 QoS） |
+| ❌ **c. 網路隔離會影響外部連線**      | 錯，只要有設定 `ports:`, container 對外連線不受 network 影響 |
+| ❌ **d. 不加 network 就沒有通訊能力** | 錯，Docker 會自動建立 `default bridge` network，container 預設能通訊 |
+
+##### 結論
+
+- **共用 network：** 適合多個 container 組成同一應用（前後端、DB、API 等）
+- **隔離 network：** 用於安全分區、避免跨系統互相干擾
+- **Docker network 僅影響容器間的「通訊範圍」，不影響效能、速度、資源**
+- **最佳實務：** 明確定義 network 結構，有助於安全、維護、系統可擴展性
+
+
+
+### Docker 容器名解析( Docker DNS )
+
+不是域名解析，而是 container 名稱解析，每個 network（bridge）都有內建 DNS 解析功能，只要 container 名叫 `abc-service`，就可以透過 `http://abc-service` 呼叫
+
+### Docker 儲存卷（Docker Volumes）
+
+Docker **Volume** 是用來**持久化儲存容器資料**的機制，不會隨容器刪除而消失，適用於儲存資料庫、上傳檔案等重要資料。
+
+Volume 是由 Docker 管理的目錄，存放於宿主機上(在 `/var/lib/docker/volumes/` 下)，但與 container 綁定。
+
+Volume 實體路徑 
+
+1. Linux 原生環境 /var/lib/docker/volumes/<volume-name>/_data/
+
+   所有 volume 目錄都集中在：/var/lib/docker/volumes/
+
+2. Windows 安裝 Docker Desktop: 
+
+| 類型           | 定義方式                     | 說明                                                         |
+| -------------- | ---------------------------- | ------------------------------------------------------------ |
+| **Volume**     | `-v my-volume:/app/data`     | **由 Docker 管理的資料區**，可重複掛載，`適合生產環境`       |
+| **Bind mount** | `/host/path:/container/path` | 將**主機實體資料夾**直接掛入 container，`適合開發（熱更新）` |
+| **tmpfs**      | `--tmpfs /tmp`               | 暫存於記憶體，容器停止資料即消失                             |
+
+#### Volume 使用方式
+
+##### CLI 建立與掛載
+
+```
+bashCopyEditdocker volume create mydata
+docker run -v mydata:/var/lib/mysql mysql
+```
+
+##### Compose 寫法
+
+```
+yamlCopyEditservices:
+  mysql:
+    image: mysql:8
+    volumes:
+      - dbdata:/var/lib/mysql
+
+volumes:
+  dbdata:
+```
+
+------
+
+#### Volume 優點
+
+- ✅ 資料**持久化**（容器刪除資料不會消失）
+- ✅ 可在**多個 container 間共用**
+- ✅ 避免把資料寫進映像（減少 image 體積）
+- ✅ 可搭配備份策略或複製部署
+
+#### 查看與管理 Volume
+
+```
+docker volume ls              # 列出所有 volumes
+docker volume inspect myvol  # 查看指定 volume 詳細資訊
+docker volume rm myvol       # 刪除 volume（不可在用中）
+```
+
+#### 實務建議
+
+- 使用 `volumes:` 優於硬編寫絕對路徑（更可攜）
+- 資料庫等服務一定要掛載 volume，避免 container 重建導致資料丟失
+- bind mount 適合開發（例如 hot-reload 程式碼）
+
+```mermaid
+flowchart TD
+    A[建立 Docker Volume] --> B[啟動 Container 並掛載 Volume]
+    B --> C[Container 存取 Volume 中的資料]
+    C --> D[停止或刪除 Container]
+    D --> E[Volume 資料仍保留]
+    E --> F[新 Container 可再次掛載該 Volume]
+
+```
+
+#### Volume vs Bind Mount 結構比較
+
+```mermaid
+graph LR
+    subgraph Host
+        H1[/ /var/lib/docker/volumes/myvol/_data /]
+        H2[/ /home/user/data /]
+    end
+
+    subgraph Container
+        C1[/ /app/data /]
+        C2[/ /mnt/data /]
+    end
+
+    H1 -->|Volume 掛載| C1
+    H2 -->|Bind Mount 掛載| C2
+```
+
+###  Compose Volume 掛載邏輯
+
+```mermaid
+flowchart TB
+    A[Docker Compose 啟動]
+    A --> B["建立 Volume: dbdata"]
+    B --> C["service: mysql"]
+    C --> D["/var/lib/mysql"]
+    B -->|自動映射| D
+```
+
+### Entrypoint and Command exec
 
 | **指令**     | **作用**                                                     |
 | ------------ | ------------------------------------------------------------ |
@@ -895,11 +1115,17 @@ docker-compose -p carcare up -d
 # Linux/macOS agent pipeline 指定 Project name
 export COMPOSE_PROJECT_NAME=$(projectName)
 
-# Windows agent pipeline 指定 Project name
 # by powshershell
+# Windows agent pipeline 指定 Project name
 $env:COMPOSE_PROJECT_NAME = "$(projectName)"
+# Windows 切換 docker host
+$env:DOCKER_HOST = 'tcp://192.168.100.41:2375'
+
 # by cmd
+# Windows agent pipeline 指定 Project name
 set COMPOSE_PROJECT_NAME=$(projectName)
+# Windows 切換 docker host
+set DOCKER_HOST=tcp://192.168.100.41:2375 && echo connected && docker ps
 
 # 指定 compose 位置
 docker-compose -f ./Web/docker-compose.yml up -d
@@ -944,7 +1170,7 @@ reference ComposeDoc
 
    對外 port 必須唯一，port  號占用會顯示錯誤，回頭修改 compose file
 
-   ![image-20250106123750685](.attach/.README/image-20250106123750685.png)
+   ![image-20250106123750685](.attach/.README/image-20250106123750685.png) 
 
 2. Docker login Fail
 
@@ -954,13 +1180,13 @@ reference ComposeDoc
 
    : failed to resolve reference "docker.io/verdaccio/verdaccio:latest": failed to authorize: failed to fetch oauth token: unexpected status from GET request to https://auth.docker.io/token?scope=repository%3Averdaccio%2Fverdaccio%3Apull&service=registry.docker.io: 401 Unauthorized
 
-   ![image-20250106142240491](.attach/.README/image-20250106142240491.png)
+   ![image-20250106142240491](.attach/.README/image-20250106142240491.png) 
 
     `docker login -u loginDockerUser`
 
    然後輸入密碼
 
-   ![image-20250106142336567](.attach/.README/image-20250106142336567.png)
+   ![image-20250106142336567](.attach/.README/image-20250106142336567.png) 
 
 
 
@@ -1027,7 +1253,7 @@ https://github.com/goharbor/harbor
 
 - 調整 data_volume 資料存放位置
 
-  ![image-20250123145204409](.attach/.README/image-20250123145204409.png)
+  ![image-20250123145204409](.attach/.README/image-20250123145204409.png) 
 
 
 
@@ -1063,7 +1289,7 @@ ide 會自己跳出安裝提醒，如果沒有則需要手動安裝
 
 #### 容器化工作檢查必要條件
 
-![image-20250218151049257](.attach/.README/image-20250218151049257.png)
+![image-20250218151049257](.attach/.README/image-20250218151049257.png) 
 
 #### launchSetting
 
@@ -1137,7 +1363,7 @@ ide 會自己跳出安裝提醒，如果沒有則需要手動安裝
 
 附加按鈕
 
-![image-20250206135025161](.attach/.README/image-20250206135025161.png)
+<img src=".attach/.README/image-20250206135025161.png" alt="image-20250206135025161" style="zoom:67%;" /> 
 
 # Kubernetes 
 
@@ -1267,7 +1493,7 @@ Setting >> Kubernetes
 kubectl version
 ```
 
-![image-20250123154024426](.attach/.README/image-20250123154024426.png)
+![image-20250123154024426](.attach/.README/image-20250123154024426.png) 
 
 ## GUI 
 
@@ -1406,7 +1632,7 @@ curl http://192.168.10.20:2375/_ping
 
 要出現這個畫面才算成功
 
-![image-20250207141756141](.attach/.README/image-20250207141756141.png)
+![image-20250207141756141](.attach/.README/image-20250207141756141.png) 
 
 # 專案鏡像化工作與CICD
 
@@ -1680,10 +1906,6 @@ Volumn 設定是資料掛載的概念，檔案掛檔案，資料夾掛資料夾�
          docker image prune -a -f
       displayName: 'clean local docker images'
 ```
-
-1. 
-
-
 
 
 

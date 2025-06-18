@@ -92,29 +92,29 @@ curl http://localhost:5000/v2/dparcore/tags/list
 
 extension 安裝 
 
-![image-20250121101831751](.attach/.ComposeDoc/image-20250121101831751.png)
+![image-20250121101831751](.attach/.ComposeDoc/image-20250121101831751.png) 
 
 新增連線
 
-![image-20250121101954323](.attach/.ComposeDoc/image-20250121101954323.png)
+![image-20250121101954323](.attach/.ComposeDoc/image-20250121101954323.png) 
 
 選擇 v2 
 
-![image-20250121102051463](.attach/.ComposeDoc/image-20250121102051463.png)
+![image-20250121102051463](.attach/.ComposeDoc/image-20250121102051463.png) 
 
-port 使用 container 對外 port
+port 使用 container 對外 port 
 
-![image-20250121102732098](.attach/.ComposeDoc/image-20250121102732098.png)
+![image-20250121102732098](.attach/.ComposeDoc/image-20250121102732098.png) 
 
 沒有設置 username 與 passeword 就跳過
 
-![image-20250121102804792](.attach/.ComposeDoc/image-20250121102804792.png)
+![image-20250121102804792](.attach/.ComposeDoc/image-20250121102804792.png) 
 
-![image-20250121102814814](.attach/.ComposeDoc/image-20250121102814814.png)
+![image-20250121102814814](.attach/.ComposeDoc/image-20250121102814814.png) 
 
 連上就可以看已經push 的 image
 
-![image-20250121103154624](.attach/.ComposeDoc/image-20250121103154624.png)
+![image-20250121103154624](.attach/.ComposeDoc/image-20250121103154624.png) 
 
 ## BeGat
 
@@ -184,6 +184,32 @@ https://github.com/liying2008/medis-binaries/releases
 
 ![image-20250611164635548](.attach/.ComposeDoc/image-20250611164635548.png)
 
+## MySQL
+
+### MySQL compose build
+
+```powershell
+# cd 到 complose 位置
+cd D:\Users\AmandaChou\git\github\ReadingNote\Devops\DockerStack\Volumes\mysql
+
+# 檢查 complose 存在
+ls
+
+# 執行
+docker-compose up -d
+
+# 檢查容器是否執行
+docker ps
+
+# 進入容器
+docker exec -it sqlserver_1437 bash
+
+# 進入容器使用容器內 cli 工具
+docker exec -it sqlserver_1437 /opt/mssql-tools18/bin/sqlcmd -S tcp:localhost  -U sa -P "mysettingpassword" -C
+```
+
+
+
 ## MSSQL
 
 ### MSSQL compose build
@@ -220,7 +246,7 @@ mysettingpassword
 
 #### 檢查 mdf、ldf 掛載
 
-![image-20250106140617970](.attach/.ComposeDoc/image-20250106140617970.png)
+![image-20250106140617970](.attach/.ComposeDoc/image-20250106140617970.png) 
 
 #### 進入容器
 
@@ -345,13 +371,13 @@ ls -a /verdaccio/storage
 
 檢查檔案存在
 
-![image-20241224163723167](.attach/.ComposeDoc/image-20241224163723167.png)
+![image-20241224163723167](.attach/.ComposeDoc/image-20241224163723167.png) 
 
 確保目錄中包含 `docker-compose.yml`
 
 compose up 之後新增了一個 .verdaccio-db.json
 
-![image-20241224173809899](.attach/.ComposeDoc/image-20241224173809899.png)
+![image-20241224173809899](.attach/.ComposeDoc/image-20241224173809899.png) 
 
 #### Test into
 
@@ -378,7 +404,7 @@ pass: itsowermysettingpassword
 
    對外 port 必須唯一，port  號占用會顯示錯誤，回頭修改 compose file
 
-   ![image-20250106123750685](.attach/.ComposeDoc/image-20250106123750685.png)
+   ![image-20250106123750685](.attach/.ComposeDoc/image-20250106123750685.png) 
 
 2. Docker login Fail
 
@@ -388,13 +414,13 @@ pass: itsowermysettingpassword
 
    : failed to resolve reference "docker.io/verdaccio/verdaccio:latest": failed to authorize: failed to fetch oauth token: unexpected status from GET request to https://auth.docker.io/token?scope=repository%3Averdaccio%2Fverdaccio%3Apull&service=registry.docker.io: 401 Unauthorized
 
-   ![image-20250106142240491](.attach/.ComposeDoc/image-20250106142240491.png)
+   ![image-20250106142240491](.attach/.ComposeDoc/image-20250106142240491.png) 
 
     `docker login -u loginDockerUser`
 
    然後輸入密碼
 
-   ![image-20250106142336567](.attach/.ComposeDoc/image-20250106142336567.png)
+   ![image-20250106142336567](.attach/.ComposeDoc/image-20250106142336567.png) 
 
 
 
