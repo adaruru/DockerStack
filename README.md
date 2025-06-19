@@ -758,6 +758,51 @@ docker history <imageName>
 
 ## Container
 
+### Name
+
+影響 Docker Compose Container 命名的 3 個要素
+
+1. Project Name（Container Group Name） 控制整體命名前綴
+
+   - 預設為 `docker-compose.yml` 所在資料夾名稱
+
+   - Compose 會自動將其作為**容器、網路、Volume 的前綴**
+
+     容器名稱前綴（若無 `container_name`）
+
+     Volume 名稱前綴（如 `myapp_mysql-data`）
+
+     Network 名稱前綴（如 `myapp_default`）
+
+   - 可用環境變數 `COMPOSE_PROJECT_NAME=projectName` 覆寫預設值
+
+     ```powershell
+     # windows ps
+     $env:COMPOSE_PROJECT_NAME = "projectName"
+     
+     # Linux/macOS
+     export COMPOSE_PROJECT_NAME=projectName
+     
+     # docker manual
+     docker compose -p myproject up
+     ```
+
+2. Container Name
+
+   - 預設情況下，Docker Compose 會使用 `[Project Name]_[Service Name]_[No]`，ex: `myapp_mysql_1`
+
+   - 為 Compose service 所指定的容器名稱，則此名稱會覆蓋預設命名規則 ex: container_name: custom_mysql
+
+   - 若名稱與 Group Name（叢集名稱）前綴一致，**Docker Desktop UI 中會在該 Project Group 下顯示**（僅影響 UI 分組，不影響實際運作）
+
+   - 可用 `container_name:` 明確指定
+
+3. Service Name（Compose steps name）
+
+   - Compose 檔中每個 `services:` 底下的 key
+
+   - 僅用於 Compose 管理識別，不影響最終容器名稱（除非未指定 `container_name`）
+
 ### run container via compose
 
 reference docker-compose (run container)
@@ -1116,10 +1161,12 @@ docker-compose -p carcare up -d
 export COMPOSE_PROJECT_NAME=$(projectName)
 
 # by powshershell
+# 為了手動在現有叢集( project name )新增一個 container 
 # Windows agent pipeline 指定 Project name
 $env:COMPOSE_PROJECT_NAME = "$(projectName)"
+$env:COMPOSE_PROJECT_NAME = "carcare"
 # Windows 切換 docker host
-$env:DOCKER_HOST = 'tcp://192.168.100.41:2375'
+$env:DOCKER_HOST = 'tcp://192.168.10.20:2375'
 
 # by cmd
 # Windows agent pipeline 指定 Project name

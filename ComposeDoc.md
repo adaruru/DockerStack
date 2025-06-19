@@ -2,6 +2,8 @@
 
 ## docker-compose run flow
 
+dockercompose practice note
+
 ### run container
 
 ```powershell
@@ -200,13 +202,23 @@ docker-compose up -d
 
 # 檢查容器是否執行
 docker ps
-
-# 進入容器
-docker exec -it sqlserver_1437 bash
-
-# 進入容器使用容器內 cli 工具
-docker exec -it sqlserver_1437 /opt/mssql-tools18/bin/sqlcmd -S tcp:localhost  -U sa -P "mysettingpassword" -C
 ```
+
+### 測試連線
+
+![image-20250618151144552](.attach/.ComposeDoc/image-20250618151144552.png) 
+
+連線失敗遇到
+
+Public Key Retrieval is not allowed
+
+調整設定
+
+<img src=".attach/.ComposeDoc/image-20250618151241651.png" alt="image-20250618151241651" style="zoom: 63%;" /><img src=".attach/.ComposeDoc/image-20250618151308173.png" alt="image-20250618151308173" style="zoom:63%;" /> 
+
+連線成功
+
+![image-20250618151559990](.attach/.ComposeDoc/image-20250618151559990.png) 
 
 
 

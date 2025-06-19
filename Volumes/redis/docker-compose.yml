@@ -1,5 +1,5 @@
 services:
-  redis:
+  carcare-redis:
     image: redis:8.0
     container_name: carcare-redis
     ports:
