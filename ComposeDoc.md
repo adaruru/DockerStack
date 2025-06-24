@@ -2,7 +2,7 @@
 
 ## docker-compose run flow
 
-dockercompose practice note
+dockercompose practice note, git pull to C:\Users\git\DockerStack and start
 
 ### run container
 
@@ -34,8 +34,8 @@ docker-compose -f ./WinService/docker-compose.yml up -d
 2. 依賴可執行的 image，執行 container 取代 Dockerfile cli
 3. 組成 container 模式，故會形成叢集資料夾 container 分層方式顯示
 
-複製 ReadingNote\Devops\.attach\.docker\Volumes
-到 D:\Users\AmandaChou\git\github\DockerStack\Volumes
+
+到 C:\Users\git\DockerStack\Volumes
 
 開始所有 compose file 的維護與執行
 
@@ -52,7 +52,7 @@ docker-compose -f ./WinService/docker-compose.yml up -d
 ## azure agent and docker registry
 
 ```powershell
-cd C:\Users\Administrator\Volumes\azure-agent
+cd C:\Users\git\DockerStack\Volumes\azure-agent
 # build image
 docker build . -t azure-agent:dev
 # run container
@@ -63,7 +63,7 @@ docker-compose up -d
 
 1. cd 到 complose 位置
 
-   `cd D:\Users\AmandaChou\git\github\DockerStack\Volumes\dockerrepos`
+   cd C:\Users\git\DockerStack\Volumes\dockerrepos
 
 2. 檢查 complose 存在
 
@@ -124,7 +124,7 @@ port 使用 container 對外 port
 
 ```powershell
 # cd 到 complose 位置
-cd D:\Users\AmandaChou\git\github\DockerStack\Volumes\nuget
+cd C:\Users\git\DockerStack\Volumes\nuget
 
 # 檢查 complose 存在
 ls
@@ -160,7 +160,7 @@ http://localhost:29/
 
 ```powershell
 # cd 到 complose 位置
-cd D:\Users\AmandaChou\git\github\DockerStack\Volumes\redis\
+cd C:\Users\git\DockerStack\Volumes\redis\
 
 # 檢查 complose 存在
 ls
@@ -192,7 +192,7 @@ https://github.com/liying2008/medis-binaries/releases
 
 ```powershell
 # cd 到 complose 位置
-cd D:\Users\AmandaChou\git\github\ReadingNote\Devops\DockerStack\Volumes\mysql
+cd C:\Users\git\DockerStack\Volumes\mysql
 
 # 檢查 complose 存在
 ls
@@ -228,7 +228,7 @@ Public Key Retrieval is not allowed
 
 ```powershell
 # cd 到 complose 位置
-cd D:\Users\AmandaChou\git\github\DockerStack\Volumes\mssql
+cd C:\Users\git\DockerStack\Volumes\mssql
 
 # 檢查 complose 存在
 ls
@@ -364,7 +364,7 @@ A lightweight Node.js private proxy registry
 
 ```cmd
 #進入有 compose 的 資料夾
-cd D:\Users\AmandaChou\git\github\DockerStack\Volumes\verdaccio
+cd C:\Users\git\DockerStack\Volumes\verdaccio
 
 #檢查檔案存在
 ls
@@ -468,3 +468,24 @@ services:
         max-size: "10M"
         max-file: 5
 ```
+
+## Nginx
+
+
+
+1. 建立 nginx.conf.template 指定具名路徑 proxy pass 與 根路徑 proxy pass, 並可餐入帶入環境變數
+2. 建立 entrypoint.sh 實際作用在於，讀取環境變數，寫入 nginx.conf.template 轉成最終的 nginx default.conf
+3. 建立 Dockerfile 依序
+   1. 取 nginx image
+   2. 載入 nginx.conf.template
+   3. 載入 entrypoint.sh
+4. docker-compose.yml 傳入所有 nginx.conf.template 需要的參數
+
+### Nginx x Nuxt x .Net Api
+
+nuxt 的 run dev 只吃環境 development
+
+run star 要解決 CORS 又依賴 nginx 所以 ,env 用不到我就刪掉了
+
+1. local 需要切環境，只能修改 nuxt.config.ts 但小心不要推到版上
+2. remote 需要切環境，只能依靠增加 nginx container
