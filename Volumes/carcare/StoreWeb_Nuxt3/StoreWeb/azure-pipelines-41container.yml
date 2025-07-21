@@ -1,0 +1,119 @@
+trigger:
+- main
+
+pool:
+  name: linux-container-agent-pool
+
+variables:
+  buildConfiguration: 'Release'
+  dockerRegistry: '192.168.100.63:5000'
+  projectName: 'carcare'
+  storewebImageName: 'carcare-storeweb'
+  nginxImageName: 'carcare-nginx-proxy'
+  dockerImageTag: '1.0.0'
+  agentdockerhost: 'host.docker.internal' # agent 使用的 docker host
+  targetdockerhost: '192.168.100.41' # target 使用的 docker host
+
+stages:
+- stage: BuildAndRunLintAndDockerize
+  displayName: 'Build And Run Lint And Dockerize'
+  jobs:
+  - job: BuildAndRunLint
+    displayName: 'Build And Run Lint'
+
+    steps:
+    - checkout: self
+      path: buildRoot
+    - task: UseNode@1
+      inputs:
+        version: '20.19.4'
+    - script: |
+        apk add --no-cache bash git
+        corepack enable
+        corepack prepare pnpm@10.5.0 --activate
+        pnpm install
+        pnpm lint
+        pnpm build
+      displayName: 'Install, Lint, and Build'
+
+    - script: pnpm lint
+      displayName: Run Lint Check
+
+    - task: CopyFiles@2
+      inputs:
+        SourceFolder: '$(Build.SourcesDirectory)'
+        Contents: |
+          .output/**
+          package.json
+          pnpm-lock.yaml
+        TargetFolder: '$(Build.SourcesDirectory)/$(storewebImageName)'
+        displayName: 'Copy Build Files storewebImageName'
+
+    - script: |
+        echo "Building Docker storeweb Image..."
+        docker build . -t $(dockerRegistry)/$(storewebImageName):$(dockerImageTag)
+        docker tag $(dockerRegistry)/$(storewebImageName):$(dockerImageTag) $(dockerRegistry)/$(storewebImageName)
+      displayName: 'Build Docker storeweb Image'
+
+    - script: |
+        echo "Building Docker carcare-nginx-proxy Image..."
+        docker build -f ./nginx/Dockerfile -t $(dockerRegistry)/$(nginxImageName):$(dockerImageTag) .
+        docker tag $(dockerRegistry)/$(nginxImageName):$(dockerImageTag) $(dockerRegistry)/$(nginxImageName)
+      displayName: 'Build carcare-nginx-proxy Image'
+
+- stage: PushImage
+  dependsOn: BuildAndRunLintAndDockerize
+
+  condition: succeeded()
+  displayName: 'Build and Push Docker Image'
+  jobs:
+  - job: DockerPush
+    displayName: 'Containerize and Push Docker Image'
+    steps:
+
+    - script: |
+        echo "No authentication required for Docker Registry..."
+      displayName: 'Skip Docker Login'
+
+    - script: |
+        echo "Pushing storeweb Image with version tag..."
+        docker push $(dockerRegistry)/$(storewebImageName):$(dockerImageTag)
+      displayName: 'Push storeweb Image with version tag'
+
+    - script: |
+        echo "Pushing storeweb Image latest"
+        docker push $(dockerRegistry)/$(storewebImageName)
+      displayName: 'Push storeweb Image latest'
+
+    - script: |
+        echo "Pushing carcare-nginx-proxy Image with version tag..."
+        docker push $(dockerRegistry)/$(nginxImageName):$(dockerImageTag)
+      displayName: 'Push carcare-nginx-proxy Image with version tag'
+
+    - script: |
+        echo "Pushing carcare-nginx-proxy Image latest"
+        docker push $(dockerRegistry)/$(nginxImageName)
+      displayName: 'Push carcare-nginx-proxy Image latest'
+
+    - script: |
+        echo "prune local Docker Image..."
+        docker image prune -a -f
+      displayName: 'clean local docker images'
+
+- stage: DeployDockerComposeUp
+  dependsOn: PushImage
+  condition: succeeded()
+  displayName: 'Run Docker Compose'
+  jobs:
+  - job: DockerComposeUp
+    displayName: 'Docker Compose Up'
+    steps:
+    - script: |
+        export DOCKER_HOST=tcp://$(targetdockerhost):2375
+        export COMPOSE_PROJECT_NAME=$(projectName)
+        echo "Docker run container..."
+        docker-compose pull
+        docker-compose up -d
+        echo "prune local Docker Image..."
+        docker image prune -a -f
+      displayName: 'Docker run all container'

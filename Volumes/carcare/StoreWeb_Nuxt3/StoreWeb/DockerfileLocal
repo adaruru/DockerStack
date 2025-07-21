@@ -20,6 +20,7 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 COPY --from=builder /app/.output .output
 COPY --from=builder /app/package.json .
 COPY --from=builder /app/pnpm-lock.yaml .
+# --prod 只安裝 production 相依套件 dependencies ，不安裝開發用套件 devDependencies
 RUN pnpm install --prod
 
 EXPOSE 3000

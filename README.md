@@ -1921,9 +1921,7 @@ http://192.168.10.20:7728/swagger/index.html
 
 ## Volumn mount
 
-Volumn 設定是資料掛載的概念，檔案掛檔案，資料夾掛資料夾，
-
-
+Volumn 設定不是單純同步，而是硬碟掛載( mount )的概念，檔案掛檔案，資料夾掛資料夾，
 
 ## Nginx
 
