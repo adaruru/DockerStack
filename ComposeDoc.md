@@ -59,6 +59,53 @@ docker build . -t azure-agent:dev
 docker-compose up -d
 ```
 
+### azure agent Node version management
+
+#### Dockerfile 預先安裝 Node.js
+
+```dockerfile
+# 安裝 curl 與 node.js
+RUN apt-get update && \
+    apt-get install -y curl gnupg && \
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs=18.20.6-1nodesource1 && \
+    node -v && npm -v
+```
+
+確保版本固定、pipeline 快速啟動，但是多專案共用 agent 會有切換版本的提。
+
+#### Pipeline 中動態安裝
+
+優點：移植性佳、支援 cache
+缺點：首次執行會下載安裝，稍慢
+
+```yaml
+- task: UseNode@1
+  displayName: 'Install Node.js 18.20.6'
+  inputs:
+    version: '18.20.6'
+    # 避免版本飄移。
+    checkLatest: false
+```
+
+#### NVM 整合與使用
+
+如 Agent 中已整合 [nvm](https://github.com/nvm-sh/nvm)，可在 pipeline 使用 script 切換版本
+
+優點：靈活支援多版本、自建 agent 易整合
+缺點：須明確 source `.nvm.sh` 並控制 PATH
+
+```yaml
+- script: |
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+    nvm install 18.20.6
+    nvm use 18.20.6
+    node --version
+    displayName: 'Use Node.js via NVM'
+```
+
 ## docker registry
 
 1. cd 到 complose 位置
