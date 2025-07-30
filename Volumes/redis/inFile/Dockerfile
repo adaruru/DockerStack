@@ -1,2 +1,5 @@
-FROM redis:7-alpine
-CMD ["redis-server", "--requirepass", "M$Core9!its"]
+FROM redis
+
+COPY redis.conf /usr/local/etc/redis/redis.conf
+
+CMD ["redis-server", "/usr/local/etc/redis/redis.conf"]

@@ -29,6 +29,11 @@ RUN curl -fsSL https://dot.net/v1/dotnet-install.sh -o dotnet-install.sh && \
         ./dotnet-install.sh --channel $channel --install-dir /usr/share/dotnet; \
     done && \
     rm dotnet-install.sh
+# 如果 agent 需要佈署 azure app, container 等服務
+# 安裝 Azure CLI
+RUN curl -fsSL https://aka.ms/InstallAzureCLIDeb | bash - && \
+    apt-get update && \
+    apt-get install -y azure-cli
 
 # 設置環境變數
 ENV DOTNET_ROOT=/usr/share/dotnet

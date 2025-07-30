@@ -1,3 +1,4 @@
 Volumes/*/storage/**
 Volumes/nuget/Packages/
 
+Volumes/redis/inFile/storage/
