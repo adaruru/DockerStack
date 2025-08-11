@@ -491,7 +491,7 @@ cli 控制 docker 下上 方便 cicd 整合
 
 Kubernetes > Enable Kubernetes
 
-本地開發和測試 Kubernetes 集群
+本地開發和測試 Kubernetes 集群，會建立多 pod image 謹慎啟用
 
 #### General > Choose container terminal
 
@@ -1985,4 +1985,6 @@ nvm ls
 若將建置集中於 pipeline 的 build stage，再由 Dockerfile 僅負責打包產物，可避免重複編譯、提升效率與可控性，但建置與打包必須在同一個 stage 內完成。
 
 否則跨 stage 傳遞產物就需透過 artifact(上傳到 Azure DevOps Artifact Storage 雲端 blob)，而 artifact 傳遞(壓縮/上傳/下載/解壓縮)會受限於磁碟 IO 與壓縮/解壓縮時間，且無法保證還原後權限與結構一致，進一步影響容器構建的一致性與可靠性。
+
+
 

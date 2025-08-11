@@ -518,8 +518,6 @@ services:
 
 ## Nginx
 
-
-
 1. 建立 nginx.conf.template 指定具名路徑 proxy pass 與 根路徑 proxy pass, 並可餐入帶入環境變數
 2. 建立 entrypoint.sh 實際作用在於，讀取環境變數，寫入 nginx.conf.template 轉成最終的 nginx default.conf
 3. 建立 Dockerfile 依序
@@ -532,7 +530,80 @@ services:
 
 nuxt 的 run dev 只吃環境 development
 
-run star 要解決 CORS 又依賴 nginx 所以 ,env 用不到我就刪掉了
+run star 要解決 CORS 又依賴 nginx 所以 .env 用不到
 
 1. local 需要切環境，只能修改 nuxt.config.ts 但小心不要推到版上
 2. remote 需要切環境，只能依靠增加 nginx container
+
+###  nginx.conf.template
+
+1. detailedLog 修改 log 格式，詳細列出 porxy 前後規則，並 rename access_log 取代 main log
+
+2. WEB_SCHEMA 彈性化傳入的 http 或 https
+   WEB_URL彈性化傳入的 server 與 port，且彈性化可以不輸入指定 port
+
+   ```yaml
+   # docker-compose.yml
+       environment:
+       - WEB_SCHEMA=http
+       - WEB_URL=carcare-storeweb:3000
+   ```
+
+```nginx
+#  nginx.conf.template
+log_format  detailedLog  '$remote_addr - $remote_user [$time_local] "$request" '
+                  '$status $body_bytes_sent "$http_referer" '
+                  '"$http_user_agent" '
+                  'host="$host" forwarded_for="$http_x_forwarded_for" '
+                  'proxy_host="$proxy_host" proxy_forwarded_for="$proxy_add_x_forwarded_for" '
+                  'real_ip="$http_x_real_ip" '
+                  'request_time=$request_time '
+                  'upstream_addr="$upstream_addr" upstream_status="$upstream_status" '
+                  'location="$sent_http_location" '
+                  'server_port=$server_port request_uri="$request_uri"';
+
+access_log  /var/log/nginx/access.log  detailedLog;
+
+server {
+    listen 80;
+    listen [::]:80; 
+    server_name localhost;
+
+    location / {
+        proxy_pass ${WEB_SCHEMA}://${WEB_URL}/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $proxy_host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_ssl_server_name on;
+        proxy_ssl_verify off;
+    }
+
+    location /mainApi/ {
+        proxy_pass ${API_SCHEMA}://${API_URL}/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $proxy_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_ssl_server_name on;
+        proxy_ssl_verify off;
+    }
+}
+```
+
+## Seq
+
+```cmd
+# cd 到 complose 位置
+cd C:\Users\git\DockerStack\Volumes\seq
+
+# 檢查 complose 存在
+ls
+
+# 執行
+docker-compose up -d
+
+# 檢查容器是否執行
+docker ps
+```
+
+進入管理頁面

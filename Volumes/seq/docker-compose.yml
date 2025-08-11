@@ -1,0 +1,13 @@
+services:
+  carcare-seq:
+    image: datalust/seq:2025
+    container_name: carcare-seq
+    volumes:
+    - ./storage/data:/data
+    environment:
+    - ACCEPT_EULA=Y
+    - SEQ_FIRSTRUN_ADMINPASSWORD=1234
+    ports:
+    - 7710:80
+    - 5341:5341
+    restart: always

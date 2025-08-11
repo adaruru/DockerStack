@@ -1,19 +1,37 @@
+log_format  detailedLog  '$remote_addr - $remote_user [$time_local] "$request" '
+                  '$status $body_bytes_sent "$http_referer" '
+                  '"$http_user_agent" '
+                  'host="$host" forwarded_for="$http_x_forwarded_for" '
+                  'proxy_host="$proxy_host" proxy_forwarded_for="$proxy_add_x_forwarded_for" '
+                  'real_ip="$http_x_real_ip" '
+                  'request_time=$request_time '
+                  'upstream_addr="$upstream_addr" upstream_status="$upstream_status" '
+                  'location="$sent_http_location" '
+                  'server_port=$server_port request_uri="$request_uri"';
+
+access_log  /var/log/nginx/access.log  detailedLog;
+
 server {
     listen 80;
     listen [::]:80; 
     server_name localhost;
 
     location / {
-        proxy_pass http://${WEB_HOST}:${WEB_PORT}/;
+        proxy_pass ${WEB_SCHEMA}://${WEB_URL}/;
         proxy_http_version 1.1;
-        proxy_set_header Host $host;
+        proxy_set_header Host $proxy_host;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_ssl_server_name on;
+        proxy_ssl_verify off;
     }
 
     location /storeApi/ {
-        proxy_pass http://${API_HOST}:${API_PORT}/;
-        proxy_set_header Host $host;
+        proxy_pass ${API_SCHEMA}://${API_URL}/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $proxy_host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_ssl_server_name on;
+        proxy_ssl_verify off;
     }
 }
