@@ -457,65 +457,6 @@ pass: itsowermysettingpassword
 
 密碼 必須12字元
 
-### Compose Error
-
-1. port is already allocated
-
-   對外 port 必須唯一，port  號占用會顯示錯誤，回頭修改 compose file
-
-   ![image-20250106123750685](.attach/.ComposeDoc/image-20250106123750685.png) 
-
-2. Docker login Fail
-
-   當多視窗 cli 執行 docker compose 時，可能導致一個 process 背景取得 docker 的 user credential 而其他 process 無法登入
-
-   應盡量避免多 cli 執行
-
-   : failed to resolve reference "docker.io/verdaccio/verdaccio:latest": failed to authorize: failed to fetch oauth token: unexpected status from GET request to https://auth.docker.io/token?scope=repository%3Averdaccio%2Fverdaccio%3Apull&service=registry.docker.io: 401 Unauthorized
-
-   ![image-20250106142240491](.attach/.ComposeDoc/image-20250106142240491.png) 
-
-    `docker login -u loginDockerUser`
-
-   然後輸入密碼
-
-   ![image-20250106142336567](.attach/.ComposeDoc/image-20250106142336567.png) 
-
-
-
-
-
-### compose Resource Limit
-
-限制 container 
-
-```yml
-services:
-  dparcore-web:
-    image: 192.168.10.10:5000/dparcore:latest
-    deploy:
-      resources:
-        limits:
-          memory: 1024M 
-          cpus: "1"
-        reservations:
-          memory: 256M
-          cpus: "0.5"
-```
-
-### compose Log Limit
-
-```yml
-services:
-  dparcore-web:
-    image: 192.168.10.10:5000/dparcore:latest
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10M"
-        max-file: 5
-```
-
 ## Nginx
 
 1. 建立 nginx.conf.template 指定具名路徑 proxy pass 與 根路徑 proxy pass, 並可餐入帶入環境變數
@@ -607,3 +548,58 @@ docker ps
 ```
 
 進入管理頁面
+
+## Compose in depth
+
+### Compose Error
+
+1. port is already allocated
+
+   ![image-20250106123750685](.attach/.ComposeDoc/image-20250106123750685.png) 
+
+2. Docker login Fail
+
+   當多視窗 cli 執行 docker compose 時，可能導致一個 process 背景取得 docker 的 user credential 而其他 process 無法登入
+
+   應盡量避免多 cli 執行
+
+   : failed to resolve reference "docker.io/verdaccio/verdaccio:latest": failed to authorize: failed to fetch oauth token: unexpected status from GET request to https://auth.docker.io/token?scope=repository%3Averdaccio%2Fverdaccio%3Apull&service=registry.docker.io: 401 Unauthorized
+
+   ![image-20250106142240491](.attach/.ComposeDoc/image-20250106142240491.png) 
+
+    `docker login -u loginDockerUser`
+
+   然後輸入密碼
+
+   ![image-20250106142336567](.attach/.ComposeDoc/image-20250106142336567.png) 
+
+### compose Resource Limit
+
+限制 container 
+
+```yml
+services:
+  dparcore-web:
+    image: 192.168.10.10:5000/dparcore:latest
+    deploy:
+      resources:
+        limits:
+          memory: 1024M 
+          cpus: "1"
+        reservations:
+          memory: 256M
+          cpus: "0.5"
+```
+
+### compose Log Limit
+
+```yml
+services:
+  dparcore-web:
+    image: 192.168.10.10:5000/dparcore:latest
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10M"
+        max-file: 5
+```

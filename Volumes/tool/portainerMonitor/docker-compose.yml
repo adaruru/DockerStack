@@ -1,0 +1,27 @@
+services:
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: always
+    ports:
+    - "9000:9000"
+    # - "9443:9443" # 可選，針對 HTTPS
+    environment:
+    - DOCKER_HOST=tcp://host.docker.internal:2375
+    volumes:
+    # - /var/run/docker.sock:/var/run/docker.sock #linux專用
+    - ./storage/portainer:/data
+
+  supercronic:
+    image: michaelpereira75/supercronic
+    volumes:
+    - ./crontab:/etc/crontab
+    - ./scripts:/scripts
+    command: [ "/etc/crontab" ]
+    restart: always
+
+  gotify:
+    image: gotify/server
+    ports:
+    - "8000:80"
+    restart: always

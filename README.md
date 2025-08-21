@@ -160,7 +160,6 @@ yyyyyyyyyyyy   mycompose_default     bridge    local  <-- 這就是自動建立�
 查看目前系統支援哪些 driver：
 
 ```bash
-CopyEdit
 docker info
 ```
 
@@ -201,10 +200,10 @@ compose networks 沒有設定的情況下，Docker 自動建立一個叫 `defaul
 
 ##### 結論
 
-- **共用 network：** 適合多個 container 組成同一應用（前後端、DB、API 等）
-- **隔離 network：** 用於安全分區、避免跨系統互相干擾
-- **Docker network 僅影響容器間的「通訊範圍」，不影響效能、速度、資源**
-- **最佳實務：** 明確定義 network 結構，有助於安全、維護、系統可擴展性
+- 共用 network：適合多個 container 組成同一應用（前後端、DB、API 等）
+- 隔離 network：用於安全分區、避免跨系統互相干擾
+- Docker network 僅影響容器間的「通訊範圍」，不影響效能、速度、資源
+- 最佳實務：明確定義 network 結構，有助於安全、維護、系統可擴展性
 
 
 
@@ -237,14 +236,14 @@ Volume 實體路徑
 ##### CLI 建立與掛載
 
 ```
-bashCopyEditdocker volume create mydata
+docker volume create mydata
 docker run -v mydata:/var/lib/mysql mysql
 ```
 
 ##### Compose 寫法
 
 ```
-yamlCopyEditservices:
+services:
   mysql:
     image: mysql:8
     volumes:
@@ -265,16 +264,19 @@ volumes:
 
 #### 查看與管理 Volume
 
-```
-docker volume ls              # 列出所有 volumes
-docker volume inspect myvol  # 查看指定 volume 詳細資訊
-docker volume rm myvol       # 刪除 volume（不可在用中）
+```cmd
+# 列出所有 volumes
+docker volume ls
+# 查看指定 volume 詳細資訊
+docker volume inspect myvol
+# 刪除 volume（不可在用中）
+docker volume rm myvol       
 ```
 
 #### 實務建議
 
 - 使用 `volumes:` 優於硬編寫絕對路徑（更可攜）
-- 資料庫等服務一定要掛載 volume，避免 container 重建導致資料丟失
+- 資料庫等服務一定要掛載 volume，避免 container 重建導致資料丟失，維持資料庫持久化
 - bind mount 適合開發（例如 hot-reload 程式碼）
 
 ```mermaid
@@ -866,34 +868,27 @@ docker rm <containerName>
 
 ### cli run container 
 
-```shell
+```cmd
 docker run -it --rm azure-agent:dev /bin/bash
 
-進入交互模式
+# 進入交互模式
 docker exec -it azure-agent bash
 
-遠端 docker host 進入交互模式
+# 遠端 docker host 進入交互模式
 cmd /c "set DOCKER_HOST=tcp://192.168.10.10:2375 && docker exec -it azure-agent bash"
 cmd /c "set DOCKER_HOST=tcp://192.168.10.10:2375 && docker exec -it dparcore-batch bash"
 
-遠端 docker host 進入且執行 Batch 交互模式
-cmd /c "set DOCKER_HOST=tcp://192.168.10.20:2375 && docker exec -it dparcore-batch dotnet /app/Batch.dll"
-```
-
-使用 cmd
-
-```shell
-# 進入遠端容器
+# 或是
 set DOCKER_HOST=tcp://192.168.10.10:2375
 docker exec -it dparcore-web bash
+
+# 遠端 docker host 進入且執行 Batch 交互模式
+cmd /c "set DOCKER_HOST=tcp://192.168.10.20:2375 && docker exec -it dparcore-batch dotnet /app/Batch.dll"
 
 # 進入遠端docker host 查看所有 images
 set DOCKER_HOST=tcp://192.168.10.10:2375
 docker ps
-
 ```
-
-
 
 ### monitor container cpu and memory usage
 
@@ -1412,6 +1407,46 @@ ide 會自己跳出安裝提醒，如果沒有則需要手動安裝
 
 <img src=".attach/.README/image-20250206135025161.png" alt="image-20250206135025161" style="zoom:67%;" /> 
 
+# Portainer
+
+### Add Environment
+
+```powershell
+$context41 = "remote-41"
+$host41 = "host=tcp://192.168.100.41:2375"
+
+function createAndUse41 {
+    docker context create $context41 `
+     --description "crm uat 192.168.100.41" `
+     --docker $host41
+    
+    docker context use $context41 
+    Write-Host "Switched to context: $context41"
+}
+function installPortainerAgent{
+    docker run -d -p 9001:9001 `
+    --name portainer_agent `
+    --restart=always `
+    -v /var/run/docker.sock:/var/run/docker.sock `
+    -v /var/lib/docker/volumes:/var/lib/docker/volumes `
+    -v /:/host portainer/agent:2.21.5
+}
+
+function install101Portainer {
+    createAndUse101
+    installPortainerAgent
+}
+```
+
+### Env Naming Rule
+
+Project Name: optional. Leave blank if not for a project
+Env Name: Production、Sit、Uat
+Server Form: Physical server、Ubuntu VM、Azure Container App、AWS Container services
+Physical IP Path
+
+![image-20250814092529299](.attach/.README/image-20250814092529299.png)
+
 # Kubernetes 
 
 ### 核心功能
@@ -1922,6 +1957,12 @@ http://192.168.10.20:7728/swagger/index.html
 ## Volumn mount
 
 Volumn 設定不是單純同步，而是硬碟掛載( mount )的概念，檔案掛檔案，資料夾掛資料夾，
+
+## diff grow
+
+把 runtime 產生的異動用 volume 設定改放到 HostOS 環境是必要的處理。
+
+diff長大
 
 ## Nginx
 

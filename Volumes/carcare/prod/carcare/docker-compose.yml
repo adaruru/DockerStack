@@ -1,0 +1,23 @@
+services:
+  carcare-storeweb:
+    image: 192.168.100.63:5000/carcare-storeweb:latest
+    container_name: carcare-storeweb
+    ports:
+    - "7727:3000"
+    environment:
+    - NODE_ENV=production
+    - PORT=3000
+
+  carcare-store-nginx-proxy:
+    image: 192.168.100.63:5000/carcare-store-nginx-proxy:latest
+    container_name: carcare-storeweb-nginx-proxy
+    environment:
+    - WEB_SCHEMA=http
+    - WEB_URL=carcare-storeweb:3000
+    - API_SCHEMA=http
+    - API_URL=carcare-storeapi:80
+    ports:
+    - "7725:80"
+    depends_on:
+    - carcare-storeweb
+    restart: always
