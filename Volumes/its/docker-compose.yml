@@ -1,0 +1,35 @@
+services:
+  its-nuget:
+    image: loicsharma/baget:latest
+    container_name: its-nuget
+    ports:
+    - "29:80"
+    environment:
+    - ApiKey=html5!its
+    - Storage__Type=FileSystem # 設定存儲類型為檔案系統
+    - Storage__Path=/var/packages
+    volumes:
+    - C:/Users/Administrator/Volumes/nuget/storage/app/baget.db:/app/baget.db
+    - C:/Users/Administrator/Volumes/nuget/storage/packages:/var/packages
+    restart: always
+
+  its-verdaccio:
+    image: verdaccio/verdaccio:latest
+    container_name: its-verdaccio
+    ports:
+    - "4873:4873"
+    volumes:
+    - C:/Users/Administrator/Volumes/verdaccio/storage:/verdaccio/storage
+    - C:/Users/Administrator/Volumes/verdaccio/conf:/verdaccio/conf
+    restart: always
+
+  its-portainer:
+    image: portainer/portainer-ce:2.21.5
+    container_name: its-portainer
+    ports:
+    - "9000:9000"
+    environment:
+    - DOCKER_HOST=tcp://host.docker.internal:2375
+    volumes:
+    - C:/Users/Administrator/Volumes/portainer/storage:/data
+    restart: always
