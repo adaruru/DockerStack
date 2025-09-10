@@ -33,3 +33,16 @@ services:
     volumes:
     - C:/Users/Administrator/Volumes/portainer/storage:/data
     restart: always
+
+  its-certcenter:
+    image: 192.168.100.63:5000/its-certcenter
+    container_name: its-certcenter
+    ports:
+    - "9250:9250"
+    environment:
+    - ACME_ACCOUNT=itsower567@gmail.com
+    - ACME_DNS_API=https://auth.acme-dns.io/register
+    # 務必成功執行之後再掛出憑證儲存目錄
+    # windows 無法掛出*號目錄，故一個憑證申請對應一個目錄，請勿共用
+    volumes:
+    - C:/Users/Administrator/Volumes/its-certcenter/storage:/its-certcenter/*.itsower.com.tw
