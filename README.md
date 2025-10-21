@@ -1183,6 +1183,30 @@ docker-compose -f ./WinService/docker-compose.yml up -d
 
 開始所有 compose file 的維護與執行
 
+### run error
+
+| 情況                                                         | 觸發條件                             | Docker 實際行為                                              | 解決方法                                                     |
+| ------------------------------------------------------------ | ------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| 同名容器正在執行                                             | Compose 檢查到同名容器正在 active    | ❌The container name "/xxx" is already in use by container "<ID>"<br />Compose 拋錯<br />什麼都不動 | 若 ① ❌ compose cd 到 carcare 資料夾，使 meta 一致<br />若 ② ❌compose 之前指定 export COMPOSE_PROJECT_NAME=carcare<br />若 ③  ✅ compose  -p 指定 docker-compose -p carcare -f docker-compose.yml pull |
+| 同名容器仍在，但 Compose 掛載 stack metadata 不同            | Docker 沒報錯，但 Compose 認為要新建 | ⚠️ Docker 為了保證新容器可啟動，自動改名<br />carcare-773d92aeaba4_carcare-backendweb | 若 ②❌ 重複指令 export COMPOSE_PROJECT_NAME 導致 meta 錯誤<br />若 ③ ✅ compose  -p 指定 docker-compose -p carcare -f docker-compose.yml pull |
+| ③ 同名容器仍在執行<br />Compose 掃描到該容器屬於同一 stack/project | Compose 覺得這是「我的容器」         | ✅ 正常重建（覆蓋成功）<br />Compose 執行 replace，舊的被 remove<br />新的用原名起來<br />carcare-backendweb | NA                                                           |
+
+1. 掃描到該容器屬於同一 stack/project 才可以覆蓋重建
+
+2. 解決方法
+
+   ① compose cd 到 carcare 資料夾，使 meta 一致
+
+   ​	但這會造成為了製造一樣的 meta 額外增加資料夾 carcare、carcare-sit 等非必要資料夾
+
+   ② compose 之前指定 export COMPOSE_PROJECT_NAME=carcare
+   	但這會造成一個腳本，一次執行多個環境時
+   	重複指令 export COMPOSE_PROJECT_NAME=carcare、  export COMPOSE_PROJECT_NAME=carcare-sit
+   	偶發的 meta 不一致問題
+
+   ③ compose  -p 指定 docker-compose -p carcare -f docker-compose.yml pull
+   	-p carcare 就是一致 meta 的最佳解
+
 ### before run
 
 確定拿到的是最新的 image `docker-compose pull`
@@ -1191,7 +1215,14 @@ docker-compose -f ./WinService/docker-compose.yml up -d
 
 ### after run
 
-確定本地沒有用不到的 `image docker image prune -a -f`
+local docker engine or remote docker engine clean
+
+```powershell
+# clean builded cache
+docker builder prune -af
+# clean pulled image
+docker image prune -af
+```
 
 ## CICD support container prepare
 
