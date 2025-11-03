@@ -213,23 +213,98 @@ compose networks 沒有設定的情況下，Docker 自動建立一個叫 `defaul
 
 ### Docker 儲存卷（Docker Volumes）
 
+#### Docker 的檔案系統核心概念
+
+Docker 的檔案系統由多層構成：
+
+| 層級               | 性質              | 用途                             |
+| ------------------ | ----------------- | -------------------------------- |
+| **Image Layers**   | 唯讀（Read-only） | 由 `Dockerfile` 建立的預置內容   |
+| **Writable Layer** | 可寫（Ephemeral） | 容器運行時變更，容器刪除即消失   |
+| **Volume / Mount** | 外部儲存          | 保存持久資料，與容器生命週期分離 |
+
+#### Docker 的檔案系統基本原理
+
+##### 映像內預置資料（Image-built Data）
+
+- 由 `Dockerfile` 的 `COPY` 或 `RUN` 指令產生。
+- 在容器啟動時屬於唯讀 Image 層的一部分。
+- 若該目錄被 **Bind Mount 或 Volume 掛載**，則**會被遮蔽（覆蓋）**。
+
+##### 容器運行期間產生的資料（Runtime Data）
+
+- 儲存在容器的可寫層或外部 Volume。
+- 需持久化時應掛載 Volume 或 Bind Mount。
+
 Docker **Volume** 是用來**持久化儲存容器資料**的機制，不會隨容器刪除而消失，適用於儲存資料庫、上傳檔案等重要資料。
 
-Volume 是由 Docker 管理的目錄，存放於宿主機上(在 `/var/lib/docker/volumes/` 下)，但與 container 綁定。
+Volume 是由 Docker 管理的目錄，存放於宿主機上(在 `/var/lib/docker/volumes/<volume-name>/_data/` 下)，但與 container 綁定。
 
-Volume 實體路徑 
+##### 檔案系統持久化策略
 
-1. Linux 原生環境 /var/lib/docker/volumes/<volume-name>/_data/
+| 類型                                                   | 指令寫法                              | Compose 寫法                                                 | 說明                                                         | 特性                                                         | 限制                                                         |
+| ------------------------------------------------------ | ------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| **Named Volume**                                       | `-v my-volume:/app/data`              | `volumes: - carcare-certs:/data``volumes: { carcare-certs: {} }` | 由 Docker 管理的資料卷，實體存於 `/var/lib/docker/volumes/...`，可重複掛載。**適合生產環境**。 | ✅ 第一次初始化時自動複製映像檔內資料✅ 可跨容器共用           | ❌ 不可直接在主機編輯（需進入容器或 /var/lib/docker/volumes/...） |
+| **Bind Mount**                                         | `/host/path:/container/path`          | `volumes: - ./data:/app/data`                                | 直接將主機實體目錄掛入容器。**適合開發階段（熱更新、即時測試）**。 | ✅ 主機可直接維護資料                                         | ⚠️ 會遮蔽映像檔內原始內容⚠️ 依賴主機環境，缺乏可攜性           |
+| **Bind-backed Named Volume**(driver_opts 綁定實體目錄) | *(無對應簡寫指令)*                    | `yaml<br>volumes:<br>  carcare-certs:<br>    driver: local<br>    driver_opts:<br>      type: none<br>      o: bind<br>      device: /home/docker-data/certs<br>` | 具名 Volume，但底層以 `driver_opts` 綁定至主機實體路徑。保留 Named Volume 的初始化與生命週期管理。 | ✅ 外部可直接維護✅ 第一次掛載會自動初始化映像資料✅ 可被 Docker 管理、可攜 | ⚠️ 設定較繁瑣⚠️ 若 device 目錄已有資料，初始化不會覆蓋         |
+| **Init Script + Named Volume**                         | *(需在 Dockerfile / ENTRYPOINT 實作)* | `yaml<br>volumes: - carcare-certs:/data<br>`                 | 透過容器啟動腳本（init.sh）判斷 Volume 是否為空。空時自動複製預設資料；已有內容時不覆蓋。 | ✅ 行為完全可控✅ 適用多容器或自訂初始化邏輯                   | ⚠️ 需自行實作邏輯⚠️ 程式碼維護成本高                           |
+| **tmpfs**                                              | `--tmpfs /tmp`                        | *(Compose v3.9 可用 tmpfs 配置)*                             | 將目錄暫存於記憶體中，容器停止即消失。**適合暫時性資料（session、快取）**。 | ✅ 高速 I/O✅ 無磁碟 I/O                                       | ❌ 資料不持久❌ 占用記憶體空                                   |
 
-   所有 volume 目錄都集中在：/var/lib/docker/volumes/
+1. Bind Mount 會「遮蔽」 Image 內容
 
-2. Windows 安裝 Docker Desktop: 
+   Docker 掛載機制是 **層疊替換（overlay masking）**：
 
-| 類型           | 定義方式                     | 說明                                                         |
-| -------------- | ---------------------------- | ------------------------------------------------------------ |
-| **Volume**     | `-v my-volume:/app/data`     | **由 Docker 管理的資料區**，可重複掛載，`適合生產環境`       |
-| **Bind mount** | `/host/path:/container/path` | 將**主機實體資料夾**直接掛入 container，`適合開發（熱更新）` |
-| **tmpfs**      | `--tmpfs /tmp`               | 暫存於記憶體，容器停止資料即消失                             |
+   - 掛載任何外部路徑（Bind Mount / Volume）時，該目錄會完全取代容器內對應目錄。
+   - 因此 Image 預置內容會被「遮蔽」，即使檔案仍存在於下層，但容器無法看到。
+
+2. driver_opts 綁定實體目錄
+
+   - 是「以 Bind Mount 為底層的 Named Volume」。
+
+     它繼承 Named Volume 的初始化與生命週期管理能力，同時保留 Bind Mount 的外部可見性與主機目錄控制。
+
+   - Docker 仍建立一個「Volume 實體」。
+
+     device 指向主機的真實資料夾，但這段綁定由 **Docker Volume Driver** 控制。
+
+     具備 volume metadata（Mountpoint、Driver、Labels、Options）。
+
+     容器第一次啟動時仍享有 **映像初始化複製機制**(Named Volume 的初始機制)。
+
+   ```
+   volumes:
+     carcare-certs:
+       driver: local
+       driver_opts:
+         type: none
+         o: bind
+         device: /home/docker-data/certs
+   ```
+
+3. Image 不可變，Volume 可替換。
+
+   Docker 不提供「雙向同步 Image 層與 Bind Mount」，不允許半封裝半外掛式檔案系統。
+
+   - 同步衝突: Image 層唯讀，Bind Mount 可寫，誰優先？會導致資料競爭。
+   - 不可預測行為: 部署環境不同會得到不同結果。
+   - 安全性: 外部誤操作可能破壞容器運行。
+
+4. Image 不可變，Volume 可替換。
+
+   Docker 的設計核心是：Image 不可變，Volume 可替換
+
+   若要同時達成：
+
+   - 保存映像內 baseline；
+   - 外部可維護；
+   - 不覆蓋初始化內容；
+
+   則應採用：
+
+   - 「具名 Volume + driver_opts 綁定實體目錄」或
+   - 「Init Script 初始化複製 + Named Volume」
+
+   這是目前廣泛採用、且最安全的實踐方式。
 
 #### Volume 使用方式
 
@@ -252,8 +327,6 @@ services:
 volumes:
   dbdata:
 ```
-
-------
 
 #### Volume 優點
 
@@ -306,6 +379,8 @@ graph LR
     H1 -->|Volume 掛載| C1
     H2 -->|Bind Mount 掛載| C2
 ```
+
+
 
 ###  Compose Volume 掛載邏輯
 
