@@ -46,3 +46,4 @@ services:
     # windows 無法掛出*號目錄，故一個憑證申請對應一個目錄，請勿共用
     volumes:
     - C:/Users/Administrator/Volumes/its-certcenter/storage:/its-certcenter/*.itsower.com.tw
+    restart: always
