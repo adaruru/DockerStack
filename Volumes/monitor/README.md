@@ -4,11 +4,30 @@
 
 ## 架構組件
 
-- **Prometheus** - 時序資料庫和監控核心 (Port: 9090)
-- **Grafana** - 視覺化儀表板 (Port: 3000)
-- **Alertmanager** - 告警管理系統 (Port: 9093)
+### 監控採集層
+
 - **Node Exporter** - 主機系統指標監控 (Port: 9100)
 - **cAdvisor** - Docker 容器監控 (Port: 8080)
+
+### 核心層
+
+- **Prometheus** - 時序資料庫和監控核心 (Port: 9090)
+
+  - 定期從 Exporters 抓取（scrape）指標資料
+
+  - 儲存時序資料
+
+  - 評估告警規則
+
+### 視覺化層
+
+- **Grafana** - 視覺化儀表板 (Port: 3000)
+
+### 告警層
+
+- **Alertmanager** - 告警管理系統 (Port: 9093)
+
+<div style="background-color: #f8f9fa; padding: 20px; border-radius: 10px;">   <img src=".attach/.README/prometheus-architecture-k8s-final.svg" alt="Prometheus架構圖"> </div>
 
 ## 快速開始
 
