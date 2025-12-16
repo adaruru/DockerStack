@@ -1,4 +1,50 @@
 services:
+  docker-registry:
+    image: registry:2
+    container_name: docker-registry
+    ports:
+    - "5000:5000"
+    restart: always
+    volumes:
+    - C:/Users/Administrator/Volumes/azure-agent/config/itsower-docker-registry/config.yml:/etc/docker/registry/config.yml
+    - C:/Users/Administrator/Volumes/azure-agent/storage/itsower-docker-registry/data:/var/lib/registry # 儲存映像的本地目錄
+    - C:/Users/Administrator/Volumes/azure-agent/storage/itsower-docker-registry/auth:/auth # 身份驗證資料夾（可選）
+    - C:/Users/Administrator/Volumes/azure-agent/storage/itsower-docker-registry/certs:/certs # 憑證資料夾（可選）
+    environment:
+      REGISTRY_HTTP_HEADERS_Access-Control-Allow-Origin: '[http://192.168.100.63:5000]'
+      REGISTRY_HTTP_HEADERS_Access-Control-Allow-Methods: '[HEAD,GET,OPTIONS,DELETE]'
+      REGISTRY_HTTP_HEADERS_Access-Control-Allow-Credentials: '[true]'
+      REGISTRY_HTTP_HEADERS_Access-Control-Allow-Headers: '[Authorization,Accept,Cache-Control]'
+      REGISTRY_HTTP_HEADERS_Access-Control-Expose-Headers: '[Docker-Content-Digest]'
+      REGISTRY_STORAGE_DELETE_ENABLED: 'true'
+      REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /var/lib/registry
+      # 可選的身份驗證
+      # REGISTRY_AUTH: htpasswd
+      # REGISTRY_AUTH_HTPASSWD_REALM: Registry Realm
+      # REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd
+      # 可選的 HTTPS 支持
+      # REGISTRY_HTTP_TLS_CERTIFICATE: /certs/domain.crt
+      # REGISTRY_HTTP_TLS_KEY: /certs/domain.key
+
+  registry-ui:
+    image: joxit/docker-registry-ui:main
+    container_name: registry-ui
+    restart: always
+    ports:
+    - 5001:80
+    environment:
+    - SINGLE_REGISTRY=true
+    - REGISTRY_TITLE=Docker Registry UI
+    - DELETE_IMAGES=true
+    - SHOW_CONTENT_DIGEST=true
+    - NGINX_PROXY_PASS_URL=http://192.168.100.63:5000
+    - SHOW_CATALOG_NB_TAGS=true
+    - CATALOG_MIN_BRANCHES=1
+    - CATALOG_MAX_BRANCHES=1
+    - TAGLIST_PAGE_SIZE=100
+    - REGISTRY_SECURED=false
+    - CATALOG_ELEMENTS_LIMIT=1000
+
   its-nuget:
     image: loicsharma/baget:latest
     container_name: its-nuget
@@ -42,8 +88,24 @@ services:
     environment:
     - ACME_ACCOUNT=itsower567@gmail.com
     - ACME_DNS_API=https://auth.acme-dns.io/register
-    # 務必成功執行之後再掛出憑證儲存目錄
-    # windows 無法掛出*號目錄，故一個憑證申請對應一個目錄，請勿共用
     volumes:
-    - C:/Users/Administrator/Volumes/its-certcenter/storage:/its-certcenter/*.itsower.com.tw
+    - certcenter-data:/certcenter # 持久化儲存憑證和 acme-dns 註冊資訊
+    - acme-data:/root/.acme.sh # 持久化儲存 ACME 帳戶金鑰和配置
     restart: always
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9250/acmeRegInfo" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  certcenter-data:
+    name: certcenter-data
+  acme-data:
+    name: acme-data
