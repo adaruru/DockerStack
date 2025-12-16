@@ -1,0 +1,54 @@
+# Prometheus 配置文件
+global:
+  scrape_interval: 15s  # 預設抓取間隔
+  evaluation_interval: 15s  # 預設評估規則間隔
+  external_labels:
+    monitor: 'docker-stack-monitor'
+
+# Alertmanager 配置
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+# 規則文件配置
+rule_files:
+  - "rules/*.yml"
+
+# 抓取配置
+scrape_configs:
+  # Prometheus 自身監控
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          instance: 'prometheus'
+
+  # Node Exporter 監控 (系統指標)
+  - job_name: 'node_exporter'
+    static_configs:
+      - targets: ['node_exporter:9100']
+        labels:
+          instance: 'docker-host'
+
+  # Grafana 監控 (可選)
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['grafana:3000']
+        labels:
+          instance: 'grafana'
+
+  # cAdvisor 監控 (Docker 容器指標)
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+        labels:
+          instance: 'docker-containers'
+
+  # Alertmanager 監控
+  - job_name: 'alertmanager'
+    static_configs:
+      - targets: ['alertmanager:9093']
+        labels:
+          instance: 'alertmanager'

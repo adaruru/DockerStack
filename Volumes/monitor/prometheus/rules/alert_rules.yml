@@ -1,0 +1,201 @@
+# Prometheus 告警規則
+groups:
+# 主機系統告警
+- name: host_alerts
+  interval: 30s
+  rules:
+  # CPU 使用率過高
+  - alert: HighCPUUsage
+    expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "主機 CPU 使用率過高"
+      description: "主機 {{ $labels.instance }} 的 CPU 使用率已超過 80% (當前值: {{ $value | humanize }}%)"
+
+  # CPU 使用率極高
+  - alert: CriticalCPUUsage
+    expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 95
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "主機 CPU 使用率嚴重過高"
+      description: "主機 {{ $labels.instance }} 的 CPU 使用率已超過 95% (當前值: {{ $value | humanize }}%)"
+
+  # 記憶體使用率過高
+  - alert: HighMemoryUsage
+    expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 80
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "主機記憶體使用率過高"
+      description: "主機 {{ $labels.instance }} 的記憶體使用率已超過 80% (當前值: {{ $value | humanize }}%)"
+
+  # 記憶體使用率極高
+  - alert: CriticalMemoryUsage
+    expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 95
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "主機記憶體使用率嚴重過高"
+      description: "主機 {{ $labels.instance }} 的記憶體使用率已超過 95% (當前值: {{ $value | humanize }}%)"
+
+  # 磁碟空間不足
+  - alert: LowDiskSpace
+    expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 20
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "主機磁碟空間不足"
+      description: "主機 {{ $labels.instance }} 的根目錄可用空間低於 20% (當前值: {{ $value | humanize }}%)"
+
+  # 磁碟空間嚴重不足
+  - alert: CriticalDiskSpace
+    expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 10
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "主機磁碟空間嚴重不足"
+      description: "主機 {{ $labels.instance }} 的根目錄可用空間低於 10% (當前值: {{ $value | humanize }}%)"
+
+  # 主機停機
+  - alert: HostDown
+    expr: up{job="node_exporter"} == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "主機停機"
+      description: "主機 {{ $labels.instance }} 已停機超過 1 分鐘"
+
+# Docker 容器告警
+- name: container_alerts
+  interval: 30s
+  rules:
+  # 容器 CPU 使用率過高
+  - alert: HighContainerCPU
+    expr: rate(container_cpu_usage_seconds_total{name!=""}[5m]) * 100 > 80
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "容器 CPU 使用率過高"
+      description: "容器 {{ $labels.name }} 的 CPU 使用率已超過 80% (當前值: {{ $value | humanize }}%)"
+
+  # 容器記憶體使用率過高
+  - alert: HighContainerMemory
+    expr: (container_memory_usage_bytes{name!=""} / container_spec_memory_limit_bytes{name!=""}) * 100 > 80
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "容器記憶體使用率過高"
+      description: "容器 {{ $labels.name }} 的記憶體使用率已超過 80% (當前值: {{ $value | humanize }}%)"
+
+  # 容器重啟過於頻繁
+  - alert: ContainerRestarting
+    expr: rate(container_last_seen{name!=""}[5m]) > 0
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "容器頻繁重啟"
+      description: "容器 {{ $labels.name }} 在過去 5 分鐘內重啟了多次"
+
+  # 容器停止運行
+  - alert: ContainerDown
+    expr: absent(container_last_seen{name=~"prometheus|grafana|alertmanager|node_exporter|cadvisor"})
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "重要容器停止運行"
+      description: "監控堆疊中的重要容器已停止運行"
+
+# Prometheus 服務告警
+- name: prometheus_alerts
+  interval: 30s
+  rules:
+  # Prometheus 停機
+  - alert: PrometheusDown
+    expr: up{job="prometheus"} == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Prometheus 服務停機"
+      description: "Prometheus 服務已停機超過 1 分鐘"
+
+  # Prometheus 配置重載失敗
+  - alert: PrometheusConfigReloadFailed
+    expr: prometheus_config_last_reload_successful == 0
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Prometheus 配置重載失敗"
+      description: "Prometheus 配置重載失敗，請檢查配置文件"
+
+  # Prometheus 目標抓取失敗
+  - alert: PrometheusTargetScrapeFailed
+    expr: up == 0
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Prometheus 目標抓取失敗"
+      description: "Prometheus 無法抓取目標 {{ $labels.job }} / {{ $labels.instance }}"
+
+  # Prometheus 存儲空間不足
+  - alert: PrometheusLowStorage
+    expr: (prometheus_tsdb_storage_blocks_bytes / prometheus_tsdb_storage_blocks_bytes) > 0.8
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Prometheus 存儲空間不足"
+      description: "Prometheus 時序資料庫存儲空間使用率已超過 80%"
+
+# Grafana 服務告警
+- name: grafana_alerts
+  interval: 30s
+  rules:
+  # Grafana 停機
+  - alert: GrafanaDown
+    expr: up{job="grafana"} == 0
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Grafana 服務停機"
+      description: "Grafana 服務已停機超過 1 分鐘"
+
+# Alertmanager 服務告警
+- name: alertmanager_alerts
+  interval: 30s
+  rules:
+  # Alertmanager 停機
+  - alert: AlertmanagerDown
+    expr: up{job="alertmanager"} == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Alertmanager 服務停機"
+      description: "Alertmanager 服務已停機超過 1 分鐘，無法發送告警通知"
+
+  # Alertmanager 配置重載失敗
+  - alert: AlertmanagerConfigReloadFailed
+    expr: alertmanager_config_last_reload_successful == 0
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Alertmanager 配置重載失敗"
+      description: "Alertmanager 配置重載失敗，請檢查配置文件"

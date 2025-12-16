@@ -1,0 +1,118 @@
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+    - ./prometheus:/etc/prometheus
+    - prometheus_data:/prometheus
+    command:
+    - '--config.file=/etc/prometheus/prometheus.yml'
+    - '--storage.tsdb.path=/prometheus'
+    - '--web.console.libraries=/etc/prometheus/console_libraries'
+    - '--web.console.templates=/etc/prometheus/consoles'
+    - '--web.enable-lifecycle'
+    ports:
+    - 9090:9090
+    networks:
+    - monitoring
+    restart: always
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    volumes:
+    - ./alertmanager:/etc/alertmanager
+    - alertmanager_data:/alertmanager
+    command:
+    - '--config.file=/etc/alertmanager/alertmanager.yml'
+    - '--storage.path=/alertmanager'
+    ports:
+    - 9093:9093
+    networks:
+    - monitoring
+    restart: always
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9093/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    volumes:
+    - grafana_data:/var/lib/grafana
+    - ./grafana/provisioning:/etc/grafana/provisioning
+    environment:
+    - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-itsower}
+    - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-html5!its}
+    - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+    - 3000:3000
+    networks:
+    - monitoring
+    depends_on:
+    - prometheus
+    restart: always
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  node_exporter:
+    image: prom/node-exporter:latest
+    container_name: node_exporter
+    volumes:
+    - /proc:/host/proc:ro
+    - /sys:/host/sys:ro
+    - /:/rootfs:ro
+    command:
+    - '--path.procfs=/host/proc'
+    - '--path.sysfs=/host/sys'
+    - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
+    ports:
+    - 9100:9100
+    networks:
+    - monitoring
+    restart: always
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9100/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    privileged: true
+    volumes:
+    - /:/rootfs:ro
+    - /var/run:/var/run:ro
+    - /sys:/sys:ro
+    - /var/lib/docker/:/var/lib/docker:ro
+    - /dev/disk/:/dev/disk:ro
+    ports:
+    - 8080:8080
+    networks:
+    - monitoring
+    restart: always
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  monitoring:
+    driver: bridge
+
+volumes:
+  prometheus_data:
+  alertmanager_data:
+  grafana_data:

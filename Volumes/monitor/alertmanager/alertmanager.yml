@@ -1,0 +1,92 @@
+# Alertmanager 配置文件
+global:
+  resolve_timeout: 5m
+  # SMTP 郵件通知設定 (如需使用請取消註解並在 .env 檔案中設定對應變數)
+  # smtp_smarthost: '${SMTP_HOST}:${SMTP_PORT}'
+  # smtp_from: '${SMTP_FROM}'
+  # smtp_auth_username: '${SMTP_AUTH_USERNAME}'
+  # smtp_auth_password: '${SMTP_AUTH_PASSWORD}'
+  # smtp_require_tls: true
+
+# 路由配置
+route:
+  # 預設接收者
+  receiver: 'default-receiver'
+
+  # 分組設定 - 將相似的告警分組在一起
+  group_by: ['alertname', 'cluster', 'service']
+
+  # 收到告警後等待多久才發送 (避免告警風暴)
+  group_wait: 10s
+
+  # 已分組的告警，新增告警後多久再次發送
+  group_interval: 10s
+
+  # 相同告警重複發送的間隔時間
+  repeat_interval: 12h
+
+  # 子路由 - 根據不同條件路由到不同接收者
+  routes:
+  # 嚴重告警立即通知
+  - match:
+      severity: critical
+    receiver: 'critical-alerts'
+    group_wait: 0s
+    repeat_interval: 1h
+
+  # 警告級別告警
+  - match:
+      severity: warning
+    receiver: 'warning-alerts'
+    repeat_interval: 4h
+
+# 接收者配置
+receivers:
+# 預設接收者 - 可以設定為 webhook 或其他通知方式
+- name: 'default-receiver'
+  # Webhook 範例 (可選)
+  # webhook_configs:
+  # - url: 'http://your-webhook-url/alerts'
+  #   send_resolved: true
+
+# 嚴重告警接收者
+- name: 'critical-alerts'
+  # Email 通知 (如需使用請取消註解並在 global 中設定 SMTP)
+  # email_configs:
+  # - to: '${ALERT_EMAIL_TO}'
+  #   headers:
+  #     Subject: '[CRITICAL] 嚴重告警 - {{ .GroupLabels.alertname }}'
+  #   html: |
+  #     <h2>告警詳情</h2>
+  #     {{ range .Alerts }}
+  #     <p><b>告警名稱:</b> {{ .Labels.alertname }}</p>
+  #     <p><b>嚴重程度:</b> {{ .Labels.severity }}</p>
+  #     <p><b>描述:</b> {{ .Annotations.description }}</p>
+  #     <p><b>開始時間:</b> {{ .StartsAt }}</p>
+  #     <hr>
+  #     {{ end }}
+
+  # Slack 通知 (如需使用請取消註解並在 .env 中設定 SLACK_WEBHOOK_URL)
+  # slack_configs:
+  # - api_url: '${SLACK_WEBHOOK_URL}'
+  #   channel: '#alerts'
+  #   title: ':fire: 嚴重告警'
+  #   text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+  #   send_resolved: true
+
+# 警告級別告警接收者
+- name: 'warning-alerts'
+  # Email 通知
+  # email_configs:
+  # - to: '${ALERT_EMAIL_TO}'
+  #   headers:
+  #     Subject: '[WARNING] 警告告警 - {{ .GroupLabels.alertname }}'
+
+# 抑制規則 - 避免重複告警
+inhibit_rules:
+# 如果已有嚴重告警，則抑制相同來源的警告告警
+- source_match:
+    severity: 'critical'
+  target_match:
+    severity: 'warning'
+  equal: ['alertname', 'instance']
