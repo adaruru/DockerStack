@@ -29,18 +29,18 @@ scp -r opt/* user@vm:/opt/
 cd /opt
 
 # 創建數據目錄
-mkdir -p /opt/prometheus-data
-mkdir -p /opt/alertmanager-data
+mkdir -p prometheus-data
+mkdir -p alertmanager-data
 
 # 設置權限（重要！）
 # Prometheus 和 Alertmanager 使用 UID 65534
-chown -R 65534:65534 /opt/prometheus-data
-chown -R 65534:65534 /opt/alertmanager-data
+chown -R 65534:65534 prometheus-data
+chown -R 65534:65534 alertmanager-data
 
 # 配置目錄也需要正確權限（容器需要讀取）
-chown -R 65534:65534 /opt/prometheus-config
-chown -R 65534:65534 /opt/alertmanager-config
-chown -R 472:472 /opt/grafana-config
+chown -R 65534:65534 prometheus-config
+chown -R 65534:65534 alertmanager-config
+chown -R 472:472 grafana-config
 ```
 
 ⚠️ **注意**：
@@ -271,220 +271,23 @@ scp -r grafana-config user@vm:/opt/
 docker-compose restart grafana
 ```
 
-## 維護問題
+## 架構設計
 
-### ❌ **主要缺點**
-
-### 1. **混合使用 Bind Mount 策略 - 不一致且容易混淆**
-
-**問題**：
-
-- **配置文件**：使用絕對路徑 `/var/{service}-config` (在 VM 上)
-- **數據文件**：也使用絕對路徑 `/var/{service}-data` (在 VM 上)
-- **Grafana 數據**：使用 Named Volume `grafana-data`
-
-**缺點**：
-
-```yaml
-# Prometheus - 全用絕對路徑
-- /var/prometheus-config:/etc/prometheus      # ✅ 絕對路徑
-- /var/prometheus-data:/prometheus           # ✅ 絕對路徑
-
-# Grafana - 混合策略
-- grafana-data:/var/lib/grafana              # ⚠️ Named Volume
-- /var/grafana-config:/etc/grafana/provisioning  # ✅ 絕對路徑
-```
-
-**影響**：
-
-- 不一致性導致維護困難
-- Grafana 數據無法輕鬆備份/遷移（需要用 `docker volume` 命令）
-- 無法直接從主機訪問 Grafana 資料庫文件
-
-------
-
-### 2. **在 Windows 上完全無法運行**
-
-**問題**：
-
-```yaml
-node_exporter:
-  volumes:
-    - /proc:/host/proc:ro      # ❌ Windows 上不存在
-    - /sys:/host/sys:ro        # ❌ Windows 上不存在
-    
-cadvisor:
-  volumes:
-    - /:/rootfs:ro             # ❌ Windows 路徑不同
-    - /var/lib/docker/:/var/lib/docker:ro  # ❌ Windows Docker Desktop 路徑不同
-```
-
-**你現在的環境是 Windows (`win32`)**，這些服務根本無法啟動。
-
-### 3. **路徑命名衝突風險**
-
-**問題**：
-
-```
-/var/prometheus-config
-/var/prometheus-data
-/var/alertmanager-config
-/var/alertmanager-data
-/var/grafana-config
-```
-
-`/var/` 是系統目錄，直接在下面創建這麼多目錄：
-
-- 可能與系統文件衝突
-- 權限問題（需要 root 權限）
-- 不符合 Linux 文件系統慣例
-
-**更好的做法**：
-
-```
-/opt/monitor/prometheus-config
-/opt/monitor/prometheus-data
-# 或
-/data/monitor/...
-```
-
-------
-
-### 4. **缺少權限管理**
-
-**問題**：
-
-- Prometheus 容器內運行用戶是 `nobody` (UID 65534)
-- Grafana 容器內運行用戶是 `grafana` (UID 472)
-- 直接掛載 `/var/xxx` 會遇到權限問題
-
-**你沒有在配置中處理**：
-
-```yaml
-# 缺少這些
-user: "1000:1000"  # 或適當的 UID
-# 或需要手動 chown
-```
-
-------
-
-### 5. **部署步驟複雜且容易出錯**
-
-**當前流程**：
-
-1. 手動 `scp` 上傳 3 個配置目錄
-2. 手動 SSH 到 VM 創建 2 個數據目錄
-3. 手動設置權限（README 沒寫）
-4. 然後才能 `docker-compose up`
-
-**風險**：
-
-- 忘記上傳某個目錄 → 容器啟動失敗
-- 權限錯誤 → 容器無法寫入數據
-- 路徑打錯 → 難以排查
-
-------
-
-### 6. **配置更新流程不清楚**
-
-**問題**：
-
-- 本地修改配置後，如何同步到 VM？
-- 需要再次 `scp` 嗎？
-- 如何觸發 Prometheus 熱重載？
-
-README 沒有說明配置更新流程。
-
-------
-
-### 7. **缺少權限的 console_libraries 和 consoles**
-
-**Prometheus 配置**：
-
-```yaml
-command:
-  - '--web.console.libraries=/etc/prometheus/console_libraries'
-  - '--web.console.templates=/etc/prometheus/consoles'
-```
-
-但你的 `prometheus-config/` 目錄下可能沒有這些文件夾，會導致警告或錯誤。
-
-### 8. **Grafana provisioning 路徑錯誤**
-
-```yaml
-- /var/grafana-config:/etc/grafana/provisioning
-```
-
-但實際本地結構是：
-
-```
-grafana-config/
-└── provisioning/
-    ├── datasources/
-    └── dashboards/
-```
-
-應該掛載：
-
-```yaml
-- /var/grafana-config/provisioning:/etc/grafana/provisioning
-```
-
-或者改成：
-
-```yaml
-- /var/grafana-config:/etc/grafana
-```
-
-------
-
-## ✅ **優點**
-
-1. ✅ 配置和數據分離清楚
+1. ✅ `本地依賴配置`和`數據持久化`分離清楚
 2. ✅ 統一命名規則 `{service}-config` / `{service}-data`
 3. ✅ 使用絕對路徑避免相對路徑問題
-4. ✅ README 有詳細部署說明
 
-------
+### bind mont
 
-## 💡 **建議改進方案**
+區分本地依賴、數據持久化、起始資料
 
-### 方案 A：全部改用相對路徑（推薦）
+- Prometheus: `/opt/prometheus-config` 和 `/opt/prometheus-data`
+- Alertmanager: `/opt/alertmanager-config` 和 `/opt/alertmanager-data`
+- Grafana: `/opt/grafana-config` (配置)，`grafana-named-volumes` (數據 - Named Volume)
+- 本地依賴: bind mont 全部使用 /opt/{ContainerName}-config
+- 數據持久化: bind mont 全部使用 /opt/{ContainerName}-data
+- 起始資料: 數據持久化且必須 Named Volume 使用 {ContainerName}-named-volumes, ex: grafana-named-volumes
 
-適合在本地或單一 VM 部署：
+### Named Volume
 
-```yaml
-volumes:
-  - ./prometheus-config:/etc/prometheus
-  - ./prometheus-data:/prometheus
-```
-
-### 方案 B：統一絕對路徑到專用目錄
-
-```yaml
-volumes:
-  - /opt/docker/monitor/prometheus-config:/etc/prometheus
-  - /opt/docker/monitor/prometheus-data:/prometheus
-```
-
-### 方案 C：全部改用 Named Volume
-
-最 Docker 化的方式：
-
-```yaml
-volumes:
-  - prometheus-config:/etc/prometheus
-  - prometheus-data:/prometheus
-```
-
-然後用 Docker 命令管理。
-
-------
-
-## 🎯 **最關鍵的問題**
-
-**你需要立即解決的**：
-
-1. **Grafana 掛載路徑** - 確認是掛載 `/var/grafana-config` 還是 `/var/grafana-config/provisioning`
-2. **權限處理** - 在 README 中說明需要設置權限
-3. **路徑位置** - 考慮改用 `/opt/` 或 `/data/` 而非 `/var/`
+不考慮: 除非必要，不然不使用 Named Volume
