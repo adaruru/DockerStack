@@ -1,0 +1,243 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1050">
+  <defs>
+    <style>
+      .server-box { fill: #f5f5f5; stroke: #333; stroke-width: 3; }
+      .component-box { fill: #fff; stroke: #333; stroke-width: 2; }
+      .prometheus { fill: #e6522c; }
+      .grafana { fill: #f46800; }
+      .alert { fill: #ff6b6b; }
+      .exporter { fill: #4CAF50; }
+      .app { fill: #2196F3; }
+      .master { fill: #9C27B0; }
+      .text { font-family: Arial, sans-serif; font-size: 14px; text-anchor: middle; }
+      .text-white { fill: #fff; }
+      .text-dark { fill: #333; }
+      .title { font-size: 18px; font-weight: bold; }
+      .subtitle { font-size: 16px; font-weight: bold; }
+      .port { font-size: 12px; }
+      .arrow { fill: none; stroke-width: 3; marker-end: url(#arrowhead); }
+      .arrow-scrape { stroke: #4CAF50; }
+      .arrow-alert { stroke: #ff6b6b; }
+      .arrow-query { stroke: #2196F3; }
+      .label-bg { fill: white; stroke: #666; stroke-width: 1; }
+    </style>
+    <marker id="arrowhead" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <polygon points="0 0, 12 6, 0 12" fill="#666" />
+    </marker>
+  </defs>
+  
+  <!-- Background -->
+  <rect x="0" y="0" width="1400" height="1050" fill="#ffffff"/>
+  
+  <!-- Title -->
+  <text x="700" y="40" class="text-dark title" style="font-size: 26px;">Prometheus 監控架構圖（K8s 環境）</text>
+  
+  <!-- MonitorServer -->
+  <rect x="50" y="80" width="600" height="750" class="server-box" rx="10"/>
+  <text x="350" y="120" class="text-dark title">MonitorServer</text>
+  <text x="350" y="145" class="text-dark port">(監控伺服器)</text>
+  
+  <!-- Prometheus -->
+  <rect x="100" y="180" width="220" height="140" class="component-box prometheus" rx="5"/>
+  <text x="210" y="210" class="text-white subtitle">Prometheus</text>
+  <text x="210" y="235" class="text-white port">Port: 9090</text>
+  <text x="210" y="260" class="text-white port">• 時序資料庫</text>
+  <text x="210" y="280" class="text-white port">• 監控核心</text>
+  <text x="210" y="300" class="text-white port">• 抓取指標</text>
+  
+  <!-- Grafana -->
+  <rect x="380" y="180" width="220" height="140" class="component-box grafana" rx="5"/>
+  <text x="490" y="210" class="text-white subtitle">Grafana</text>
+  <text x="490" y="235" class="text-white port">Port: 3000</text>
+  <text x="490" y="260" class="text-white port">• 視覺化儀表板</text>
+  <text x="490" y="280" class="text-white port">• 圖表展示</text>
+  <text x="490" y="300" class="text-white port">• 資料查詢</text>
+  
+  <!-- Alertmanager -->
+  <rect x="100" y="360" width="220" height="140" class="component-box alert" rx="5"/>
+  <text x="210" y="390" class="text-white subtitle">Alertmanager</text>
+  <text x="210" y="415" class="text-white port">Port: 9093</text>
+  <text x="210" y="440" class="text-white port">• 告警管理</text>
+  <text x="210" y="460" class="text-white port">• 通知發送</text>
+  <text x="210" y="480" class="text-white port">• 告警分組</text>
+  
+  <!-- Node Exporter (in MonitorServer) -->
+  <rect x="380" y="360" width="220" height="140" class="component-box exporter" rx="5"/>
+  <text x="490" y="390" class="text-white subtitle">Node Exporter</text>
+  <text x="490" y="415" class="text-white port">Port: 9100</text>
+  <text x="490" y="440" class="text-white port">• 主機系統指標</text>
+  <text x="490" y="460" class="text-white port">• CPU/Memory/Disk</text>
+  <text x="490" y="480" class="text-white port">(監控本機)</text>
+  
+  <!-- cAdvisor (in MonitorServer) -->
+  <rect x="100" y="540" width="220" height="140" class="component-box exporter" rx="5"/>
+  <text x="210" y="570" class="text-white subtitle">cAdvisor</text>
+  <text x="210" y="595" class="text-white port">Port: 8080</text>
+  <text x="210" y="620" class="text-white port">• 容器監控</text>
+  <text x="210" y="640" class="text-white port">• Docker 指標</text>
+  <text x="210" y="660" class="text-white port">(監控本機容器)</text>
+  
+  <!-- Info box in MonitorServer -->
+  <rect x="380" y="540" width="220" height="140" class="component-box" rx="5" style="fill: #e3f2fd;"/>
+  <text x="490" y="570" class="text-dark subtitle">監控服務</text>
+  <text x="490" y="595" class="text-dark port">所有監控組件</text>
+  <text x="490" y="615" class="text-dark port">運行在此伺服器</text>
+  <text x="490" y="650" class="text-dark port" style="font-size: 11px;">Linux VM / Physical Server</text>
+  <text x="490" y="670" class="text-dark port" style="font-size: 11px;">or K8s Node</text>
+  
+  <!-- MasterNode -->
+  <rect x="750" y="80" width="300" height="380" class="server-box" rx="10"/>
+  <text x="900" y="120" class="text-dark title">MasterNode</text>
+  <text x="900" y="145" class="text-dark port">(K8s 主節點)</text>
+  
+  <!-- K8s Components in MasterNode -->
+  <rect x="800" y="170" width="200" height="100" class="component-box master" rx="5"/>
+  <text x="900" y="200" class="text-white subtitle">K8s 控制元件</text>
+  <text x="900" y="225" class="text-white port">API Server</text>
+  <text x="900" y="245" class="text-white port">Scheduler</text>
+  <text x="900" y="265" class="text-white port">Controller Manager</text>
+  
+  <!-- Node Exporter in MasterNode -->
+  <rect x="800" y="300" width="200" height="70" class="component-box exporter" rx="5"/>
+  <text x="900" y="325" class="text-white subtitle">Node Exporter</text>
+  <text x="900" y="345" class="text-white port">Port: 9100</text>
+  <text x="900" y="362" class="text-white port">監控主節點指標</text>
+  
+  <!-- cAdvisor in MasterNode -->
+  <rect x="800" y="390" width="200" height="70" class="component-box exporter" rx="5"/>
+  <text x="900" y="415" class="text-white subtitle">cAdvisor</text>
+  <text x="900" y="435" class="text-white port">Port: 8080</text>
+  <text x="900" y="452" class="text-white port">監控控制元件容器</text>
+  
+  <!-- WorkerNode 1 -->
+  <rect x="1100" y="80" width="300" height="380" class="server-box" rx="10"/>
+  <text x="1250" y="120" class="text-dark title">WorkerNode 1</text>
+  <text x="1250" y="145" class="text-dark port">(K8s 工作節點)</text>
+  
+  <!-- Apps in WorkerNode 1 -->
+  <rect x="1150" y="170" width="200" height="100" class="component-box app" rx="5"/>
+  <text x="1250" y="200" class="text-white subtitle">App Services</text>
+  <text x="1250" y="225" class="text-white port">產品 API (Pod)</text>
+  <text x="1250" y="245" class="text-white port">Web Nginx (Pod)</text>
+  <text x="1250" y="265" class="text-white port">其他微服務</text>
+  
+  <!-- Node Exporter in WorkerNode 1 -->
+  <rect x="1150" y="300" width="200" height="70" class="component-box exporter" rx="5"/>
+  <text x="1250" y="325" class="text-white subtitle">Node Exporter</text>
+  <text x="1250" y="345" class="text-white port">Port: 9100</text>
+  <text x="1250" y="362" class="text-white port">監控本機指標</text>
+  
+  <!-- cAdvisor in WorkerNode 1 -->
+  <rect x="1150" y="390" width="200" height="70" class="component-box exporter" rx="5"/>
+  <text x="1250" y="415" class="text-white subtitle">cAdvisor</text>
+  <text x="1250" y="435" class="text-white port">Port: 8080</text>
+  <text x="1250" y="452" class="text-white port">監控 Pod 容器</text>
+  
+  <!-- WorkerNode 2 -->
+  <rect x="750" y="500" width="300" height="380" class="server-box" rx="10"/>
+  <text x="900" y="540" class="text-dark title">WorkerNode 2</text>
+  <text x="900" y="565" class="text-dark port">(K8s 工作節點)</text>
+  
+  <!-- Apps in WorkerNode 2 -->
+  <rect x="800" y="590" width="200" height="100" class="component-box app" rx="5"/>
+  <text x="900" y="620" class="text-white subtitle">App Services</text>
+  <text x="900" y="645" class="text-white port">Database (Pod)</text>
+  <text x="900" y="665" class="text-white port">Cache Redis (Pod)</text>
+  <text x="900" y="685" class="text-white port">其他微服務</text>
+  
+  <!-- Node Exporter in WorkerNode 2 -->
+  <rect x="800" y="720" width="200" height="70" class="component-box exporter" rx="5"/>
+  <text x="900" y="745" class="text-white subtitle">Node Exporter</text>
+  <text x="900" y="765" class="text-white port">Port: 9100</text>
+  <text x="900" y="782" class="text-white port">監控本機指標</text>
+  
+  <!-- cAdvisor in WorkerNode 2 -->
+  <rect x="800" y="810" width="200" height="70" class="component-box exporter" rx="5"/>
+  <text x="900" y="835" class="text-white subtitle">cAdvisor</text>
+  <text x="900" y="855" class="text-white port">Port: 8080</text>
+  <text x="900" y="872" class="text-white port">監控 Pod 容器</text>
+  
+  <!-- Arrows: Prometheus scrapes MasterNode -->
+  <path d="M 320 250 L 680 250 L 680 335 L 800 335" class="arrow arrow-scrape"/>
+  <path d="M 320 250 L 680 250 L 680 425 L 800 425" class="arrow arrow-scrape"/>
+  
+  <!-- Arrows: Prometheus scrapes WorkerNode 1 -->
+  <path d="M 320 220 L 720 220 L 720 60 L 1080 60 L 1080 335 L 1150 335" class="arrow arrow-scrape"/>
+  <path d="M 320 220 L 720 220 L 720 60 L 1080 60 L 1080 425 L 1150 425" class="arrow arrow-scrape"/>
+  
+  <!-- Arrows: Prometheus scrapes WorkerNode 2 -->
+  <path d="M 210 320 L 210 710 L 680 710 L 680 755 L 800 755" class="arrow arrow-scrape"/>
+  <path d="M 210 320 L 210 800 L 680 800 L 680 845 L 800 845" class="arrow arrow-scrape"/>
+  
+  <!-- Arrows: Prometheus scrapes local exporters -->
+  <path d="M 320 250 L 380 430" class="arrow arrow-scrape"/>
+  <path d="M 210 320 L 70 320 L 70 610 L 100 610" class="arrow arrow-scrape"/>
+  
+  <!-- Arrow: Prometheus to Alertmanager -->
+  <path d="M 210 320 L 210 360" class="arrow arrow-alert"/>
+  
+  <!-- Arrow: Grafana queries Prometheus -->
+  <path d="M 380 250 L 320 250" class="arrow arrow-query"/>
+  
+  <!-- Labels with backgrounds -->
+  <g id="label-master">
+    <rect x="680" y="270" width="90" height="25" class="label-bg" rx="3"/>
+    <text x="725" y="287" class="text-dark port" style="font-weight: bold;">抓取</text>
+  </g>
+  
+  <g id="label-worker1">
+    <rect x="1000" y="40" width="90" height="25" class="label-bg" rx="3"/>
+    <text x="1045" y="57" class="text-dark port" style="font-weight: bold;">抓取</text>
+  </g>
+  
+  <g id="label-worker2">
+    <rect x="680" y="720" width="90" height="25" class="label-bg" rx="3"/>
+    <text x="725" y="737" class="text-dark port" style="font-weight: bold;">抓取</text>
+  </g>
+  
+  <g id="label-alert">
+    <rect x="225" y="330" width="80" height="25" class="label-bg" rx="3"/>
+    <text x="265" y="347" class="text-dark port" style="font-weight: bold;">告警</text>
+  </g>
+  
+  <g id="label-query">
+    <rect x="325" y="225" width="50" height="25" class="label-bg" rx="3"/>
+    <text x="350" y="242" class="text-dark port" style="font-weight: bold;">查詢</text>
+  </g>
+  
+  <g id="label-local1">
+    <rect x="330" y="320" width="60" height="25" class="label-bg" rx="3"/>
+    <text x="360" y="337" class="text-dark port" style="font-weight: bold;">抓取</text>
+  </g>
+  
+  <g id="label-local2">
+    <rect x="20" y="590" width="60" height="25" class="label-bg" rx="3"/>
+    <text x="50" y="607" class="text-dark port" style="font-weight: bold;">抓取</text>
+  </g>
+  
+  <!-- Legend (增加高度) -->
+  <g id="legend" transform="translate(50, 920)">
+    <rect x="-10" y="-10" width="320" height="120" class="component-box" rx="5" style="fill: #fafafa;"/>
+    <text x="140" y="15" class="text-dark subtitle">資料流向說明</text>
+    
+    <line x1="10" y1="40" x2="70" y2="40" class="arrow arrow-scrape"/>
+    <text x="80" y="45" class="text-dark port" style="text-anchor: start;">Prometheus 抓取指標</text>
+    
+    <line x1="10" y1="65" x2="70" y2="65" class="arrow arrow-query"/>
+    <text x="80" y="70" class="text-dark port" style="text-anchor: start;">Grafana 查詢資料</text>
+    
+    <line x1="10" y1="90" x2="70" y2="90" class="arrow arrow-alert"/>
+    <text x="80" y="95" class="text-dark port" style="text-anchor: start;">Prometheus 發送告警</text>
+  </g>
+  
+  <!-- Workflow (增加高度並下移位置) -->
+  <g id="workflow" transform="translate(400, 920)">
+    <rect x="-10" y="-10" width="990" height="120" class="component-box" rx="5" style="fill: #fff3e0;"/>
+    <text x="480" y="15" class="text-dark subtitle">K8s 集群監控流程</text>
+    
+    <text x="10" y="40" class="text-dark port" style="text-anchor: start;">1️⃣ 每個 Node（Master + Worker）上運行 Node Exporter 和 cAdvisor</text>
+    <text x="10" y="60" class="text-dark port" style="text-anchor: start;">2️⃣ Node Exporter 監控節點系統指標（CPU、記憶體、磁碟、網路）</text>
+    <text x="10" y="80" class="text-dark port" style="text-anchor: start;">3️⃣ cAdvisor 監控 Pod 容器的資源使用指標</text>
+    <text x="10" y="100" class="text-dark port" style="text-anchor: start;">4️⃣ Prometheus 定期抓取所有節點的指標並儲存　5️⃣ Grafana 查詢並視覺化 K8s 集群狀態</text>
+  </g>
+</svg>
