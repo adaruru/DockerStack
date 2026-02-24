@@ -1522,6 +1522,8 @@ ide 會自己跳出安裝提醒，如果沒有則需要手動安裝
 
 ### Add Environment
 
+run portainer agent
+
 ```powershell
 $context41 = "remote-41"
 $host41 = "host=tcp://192.168.100.41:2375"
@@ -1548,6 +1550,12 @@ function install101Portainer {
     installPortainerAgent
 }
 ```
+
+portainer connect portainer Agent
+
+
+
+192.168.1.63:2375 與 host.docker.internal:2375
 
 ### Env Naming Rule
 
@@ -1820,7 +1828,7 @@ netsh interface portproxy add v4tov4 listenport=5128 listenaddress=192.168.1.91 
 檢查 target server 遠端 docker host 是否可用
 
 ```shell
-curl http://192.168.10.20:2375/_ping
+curl http://192.168.100.63:2375/_ping
 ```
 
 要出現這個畫面才算成功

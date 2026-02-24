@@ -79,6 +79,7 @@ services:
     volumes:
     - C:/Users/Administrator/Volumes/portainer/storage:/data
     restart: always
+    ## command: --public-url=http://192.168.100.63:9000 CE 版不支援。這是 Business Edition 的功能。
 
   its-certcenter:
     image: 192.168.100.63:5000/its-certcenter
